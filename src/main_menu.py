@@ -19,6 +19,7 @@ import shutil
 import signal
 import sys
 from getpass import getpass
+from typing import Dict
 
 from src import __version__, utils
 from src.display_filter import DisplayFilter
@@ -43,8 +44,8 @@ class MainMenu:
         parser.add_option('-n', '--jenkins_project_name', help='Name of consistent root of project names in Jenkins')
         parser.add_option('-b', '--jenkins_branch', help='TODO:#107 Used with -j, specify branch to run reports against')
         parser.add_option('-t', '--jenkins_type', help='TODO:#108 Used with -j, specify type of test [u]nit test, or [d]test to report against')
-        # parser.add_option('-c', '--triage_csv', help='Specifies local file containing [link, key, summary, assignee, reviewer, status, prio, repro, scope, component] triage file to update against live JIRA data')
-        # parser.add_option('-o', '--triage_out', help='Output file name for updated triage data. If not provided, prints to stdout.')
+        parser.add_option('-c', '--triage_csv', help='Specifies local file containing [link, key, summary, assignee, reviewer, status, prio, repro, scope, component] triage file to update against live JIRA data')
+        parser.add_option('-o', '--triage_out', help='Output file name for updated triage data. If not provided, prints to stdout.')
         parser.add_option('-u', '--unit_test', help='Unit testing mode, does not connect servers, saves config changes to test/ folder', action='store_true', dest='unit_test')
         parser.add_option('-v', '--verbose', help='Log verbose debug output to console and argus.log', action='store_true', dest='verbose')
 
@@ -99,10 +100,11 @@ class MainMenu:
         if hasattr(options, 'triage_csv'):
             jira_connections = {}
             for jira_connection in self._jira_manager.jira_connections():
+                argus_debug('Init connection: {}'.format(jira_connection.connection_name))
                 jira_connections[jira_connection.connection_name] = jira_connection
-            tu = TriageUpdate(jira_connections, self._jira_manager.get_all_cached_jira_projects())
+            triage_update = TriageUpdate(jira_connections, self._jira_manager.get_all_cached_jira_projects())
             triage_out = options.triage_out if hasattr(options, 'triage_out') else None
-            tu.process(options.triage_csv, triage_out)
+            triage_update.process(options.triage_csv, triage_out)
 
         if hasattr(options, 'dashboard'):
             user_key = optvalues.__dict__['dashboard']

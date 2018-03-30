@@ -107,11 +107,6 @@ class JiraManager:
                         dash_views[view] = self.jira_views[view]
                     self.jira_dashboards[dash] = JiraDashboard(dash, dash_views)
 
-        if len(self._jira_connections) == 0:
-            print_separator(30)
-            print('No JIRA Connections found. Prompting to add first connection.')
-            self.add_connection()
-
         # Initialize JiraProjects from locally cached files
         for file_name in os.listdir(jira_project_dir):
             full_path = os.path.join(jira_project_dir, file_name)
@@ -140,7 +135,11 @@ class JiraManager:
                 print('WARNING! Encountered error initializing JiraProject from file {}: {}'.format(full_path, e))
                 print('This JiraProject will not be initialized. Remove it manually from disk in conf/jira/projects and data/jira/')
 
-        if os.path.exists('conf/custom_params.cfg'):
+        if len(self._jira_connections) == 0:
+            print_separator(30)
+            print('No JIRA Connections found. Prompting to add first connection.')
+            self.add_connection()
+        elif os.path.exists('conf/custom_params.cfg'):
             config_parser = configparser.RawConfigParser()
             config_parser.read('conf/custom_params.cfg')
             custom_projects = config_parser.get('CUSTOM_PROJECTS', 'project_names').split(',')
@@ -186,10 +185,6 @@ class JiraManager:
         print('Resolving dependencies between JiraIssues')
         self._resolve_issue_dependencies()
         print('JiraManager initialization complete.')
-
-    def init_view_teams(self, team_manager):
-        for jv in self.jira_views:
-            jv.init_teams(team_manager)
 
     def add_connection(self, prompt: str='Name this connection:') -> Optional[JiraConnection]:
         """

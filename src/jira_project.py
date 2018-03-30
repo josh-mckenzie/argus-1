@@ -201,7 +201,7 @@ class JiraProject:
         # Protect against saving during init wiping out the local data file. Shouldn't be an issue but seen it pop up
         # during dev once or twice.
         if len(self.jira_issues) > 0:
-            save_argus_data(list(self.jira_issues.values()), self._data_file())
+            save_argus_data(self.jira_issues.values(), self._data_file())
 
     def delete_on_disk_files(self):
         if utils.unit_test:
@@ -276,8 +276,7 @@ class JiraProject:
         """
         return None if issue_key not in self.jira_issues else self.jira_issues[issue_key]
 
-    def translate_custom_field(self, field_name):
-        # type: (str) -> str
+    def translate_custom_field(self, field_name: str) -> str:
         """
         Returns original name if field isn't custom
         """
