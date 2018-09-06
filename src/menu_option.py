@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional
 
 
 class MenuOption:
@@ -22,7 +23,7 @@ class MenuOption:
     entry_name = "Unknown"
     entry_method = None
 
-    def __init__(self, hotkey, name, method, pause=True):
+    def __init__(self, hotkey: Optional[str], name: Optional[str], method: Optional[function], pause: bool = True) -> None:
         """
         :param hotkey: The key that the user will use to select this option.
         :param name: The name of the option that will be printed to the menu.
@@ -38,13 +39,13 @@ class MenuOption:
         self.needs_pause = pause
 
     @staticmethod
-    def print_blank_line():
+    def print_blank_line() -> 'MenuOption':
         return MenuOption(None, None, None)
 
     @staticmethod
-    def return_to_previous_menu(previous_menu_call):
+    def return_to_previous_menu(previous_menu_call: function) -> 'MenuOption':
         return MenuOption('q', 'Return to previous menu', previous_menu_call, pause=False)
 
     @staticmethod
-    def quit_program():
+    def quit_program() -> 'MenuOption':
         return MenuOption('q', 'Quit', exit)

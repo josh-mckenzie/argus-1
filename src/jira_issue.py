@@ -157,11 +157,11 @@ class JiraIssue(dict):
         return self['resolution'] is None or self['resolution'] == 'None' or self['resolution'] == 'Unresolved'
 
     @property
-    def is_closed(self):
+    def is_closed(self) -> bool:
         return not self.is_open
 
     @property
-    def project_name(self):
+    def project_name(self) -> str:
         return self.issue_key.split('-')[0]
 
     @property
@@ -304,7 +304,7 @@ class JiraIssue(dict):
 
         return match + matchu
 
-    def resolve_dependencies(self, jira_manager):
+    def resolve_dependencies(self, jira_manager: 'JiraManager') -> None:
         """
         issuelinks field is stored as a string with format ['issue1','issue2','issue3']. We do this for ser/deser cleanliness
         and then materialize those links in memory as references to other JiraIssues after all cached projects are loaded
@@ -332,14 +332,14 @@ class JiraIssue(dict):
 
                 self.dependencies.add(dependency)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         Hash on issue_key. This will need to be revisited if we ever allow duplicate JiraProject names across different
         JiraConnections
         """
         return hash(self.issue_key)
 
-    def __str__(self):
+    def __str__(self) -> str:
         result = 'key:{},'.format(self.issue_key)
         result += os.linesep + '   jira_connection_name:{}'.format(self.jira_connection_name)
         result += os.linesep + '   [FIELDS]'
@@ -347,14 +347,14 @@ class JiraIssue(dict):
             result += os.linesep + '   {}:{},'.format(k, v)
         return result
 
-    def serialize(self, file_handle):
+    def serialize(self, file_handle) -> None:
         # Do not save dummy placeholders to disk
         if not self.is_cached_offline:
             return
         pickle.dump(self, file_handle)
 
     @staticmethod
-    def deserialize(file_handle):
+    def deserialize(file_handle) -> 'JiraIssue':
         result = pickle.load(file_handle)
         # Initial Non-versioned serialization on disk to versioned conversion
         if not hasattr(result, 'version'):

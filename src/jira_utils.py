@@ -17,12 +17,12 @@ from subprocess import Popen
 from typing import Dict, List, Optional
 from typing import TYPE_CHECKING
 
+from src.static_systems import StaticSystems
 from src.jira_issue import JiraIssue
 from src.utils import browser, ConfigError
 
 if TYPE_CHECKING:
     from src.jira_connection import JiraConnection
-    from src.jira_manager import JiraManager
 
 
 class JiraUtils:
@@ -83,15 +83,16 @@ class JiraUtils:
             return ji
 
     @staticmethod
-    def get_issues_for_project(jira_connection: 'JiraConnection', project_name: str, update_cutoff: Optional[str]=None) -> List['JiraIssue']:
+    def get_issues_for_project(jira_connection: 'JiraConnection',
+                               project_name: str,
+                               update_cutoff: Optional[str]=None
+                               ) -> List['JiraIssue']:
         """
         Queries out all results for a given project on the provided JiraConnection after a specified update time.
         :param update_cutoff: str datetime in valid JIRA timestamp format.
             NOTE: Valid formats: 'yyyy/MM/dd HH:mm', 'yyyy-MM-dd HH:mm', 'yyyy/MM/dd', 'yyyy-MM-dd', or a period format e.g. '-5d', '4w 2d'
             Most frequently expected use-case is a specific yyyy/MM/dd HH:mm to get all tickets since last update
         """
-        # TODO: Remove this before commit
-        return []
         update_text = '' if update_cutoff is None else ' AND updated > "{}"'.format(update_cutoff)
         jql = 'PROJECT = {}{}'.format(project_name, update_text)
         print('Getting issues for project using JQL: {}'.format(jql))
@@ -115,15 +116,14 @@ class JiraUtils:
         return results
 
     @classmethod
-    def retrieve_field_value(cls, jira_manager, issue, field):
-        # type: (JiraManager, JiraIssue, str) -> str
+    def retrieve_field_value(cls, issue: JiraIssue, field: str) -> str:
         if field not in issue:
             return ''
         elif field in issue:
             return issue[field]
         else:
             # need to translate field based on custom fields for cached JiraProjects inside JiraIssue's JiraConnection
-            for jira_project in jira_manager.get_jira_connection(issue.jira_connection_name).cached_projects:
+            for jira_project in StaticSystems.jira_manager.get_jira_connection(issue.jira_connection_name).cached_projects:
                 if jira_project.owns_issue(issue):
                     custom_field = jira_project.translate_custom_field(field)
                     if custom_field not in issue:
@@ -132,8 +132,7 @@ class JiraUtils:
         raise AssertionError('Got a JiraIssue with no owning JiraProject. Issue: {}, JiraConnection name: {}'.format(issue, issue.jira_connection_name))
 
     @staticmethod
-    def sort_jira_issues(jira_issues):
-        # type: (List[JiraIssue]) -> List[JiraIssue]
+    def sort_jira_issues(jira_issues: List[JiraIssue]) -> List[JiraIssue]:
         # 2 stage sort. First by project name, then by issue key
         jira_issues.sort(key=lambda x: (x.issue_key.split('-')[0], int(x.issue_key.split('-')[1])))
         return jira_issues
@@ -145,6 +144,7 @@ class JiraUtils:
         data parsing (which I think we should), we'll only need 1 and it's not worth thinking about the abstraction
         to allow for parsing a key from different sources
         """
+        # TODO: Remove this now that we're 100% offline
         # dict of project to issues
         results = {}
         for i in issues:
@@ -164,13 +164,13 @@ class JiraUtils:
         return [item for sublist in final for item in sublist]
 
     @staticmethod
-    def open_issue_in_browser(base_url, issue_key):
+    def open_issue_in_browser(base_url: str, issue_key: str) -> None:
         issue_url = '{}/browse/{}'.format(base_url.rstrip('/'), issue_key)
         Popen([browser(), issue_url])
         print('Opened {}. Press enter to continue.'.format(issue_url))
 
     @classmethod
-    def get_cached_jira(cls, key):
+    def get_cached_jira(cls, key: str) -> Optional[JiraIssue]:
         if key not in cls._cached_jira_issues:
             return None
         return cls._cached_jira_issues[key]

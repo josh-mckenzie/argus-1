@@ -79,10 +79,10 @@ class JiraProject:
         self.add_field_translations_from_file()
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self._url
 
-    def add_field_translations_from_file(self):
+    def add_field_translations_from_file(self) -> None:
         """
         Pulls custom translations from conf/custom_params.cfg and initializes this JiraProject with them if they are
         not otherwise defined
@@ -189,7 +189,7 @@ class JiraProject:
         new_jira_project.save_config()
         return new_jira_project
 
-    def save_config(self):
+    def save_config(self) -> None:
         # .cfg file
         config_parser = configparser.RawConfigParser()
         config_parser.add_section('Config')
@@ -208,7 +208,7 @@ class JiraProject:
         if len(self.jira_issues) > 0:
             save_argus_data(self.jira_issues.values(), self._data_file())
 
-    def delete_on_disk_files(self):
+    def delete_on_disk_files(self) -> None:
         if utils.unit_test:
             return
 
@@ -220,7 +220,7 @@ class JiraProject:
         print('Successfully deleted cached Jira data for project: {}'.format(self))
         self.jira_connection = None
 
-    def refresh(self):
+    def refresh(self) -> None:
         new_issues = JiraUtils.get_issues_for_project(self.jira_connection, self.project_name, self.updated)
         if len(new_issues) > 0:
             print('Found {} updated/new issues for {}. Saving to disk.'.format(len(new_issues), self.project_name))
@@ -241,18 +241,17 @@ class JiraProject:
                 'Attempted to link mismatched JiraConnection {} to JiraProject {}'.format(jira_connection, self))
         self.jira_connection = jira_connection
 
-    def config_file(self):
+    def config_file(self) -> str:
         return os.path.join(jira_project_dir, '{}_{}.cfg'.format(self.jira_connection.connection_name, self.project_name))
 
-    def _data_file(self):
+    def _data_file(self) -> str:
         return JiraProject.data_file(self.jira_connection.connection_name, self.project_name)
 
     @staticmethod
-    def data_file(connection_name, project_name):
+    def data_file(connection_name: str, project_name: str) -> str:
         return os.path.join(jira_data_dir, '{}_{}.dat'.format(connection_name, project_name))
 
-    def get_matching_issues(self, search_string, search_type='a'):
-        # type: (str, str) -> List[JiraIssue]
+    def get_matching_issues(self, search_string: str, search_type: str = 'a') -> List[JiraIssue]:
         """
         :param search_type: 'a': all. 'o': open. 'c': closed
         """
@@ -267,23 +266,18 @@ class JiraProject:
                     results.append(v)
         return results
 
-    def owns_issue(self, issue):
-        # type: (JiraIssue) -> bool
+    def owns_issue(self, issue: JiraIssue) -> bool:
         """
         Determines whether JiraConnection for issue matches this project and project_name matches
         """
         return issue.project_name == self.project_name and issue.jira_connection_name == self.jira_connection.connection_name
 
-    def get_issue(self, issue_key):
-        """
-        :param issue_key: str to search for
-        :return: JiraIssue if found, None if not a member
-        """
+    def get_issue(self, issue_key: str) -> Optional[JiraIssue]:
         return None if issue_key not in self.jira_issues else self.jira_issues[issue_key]
 
     def translate_custom_field(self, field_name: str) -> str:
         """
-        Returns original name if field isn't custom
+        Returns original untralsnated name if field isn't custom
         """
         if field_name not in self._custom_fields:
             return field_name
@@ -296,7 +290,7 @@ class JiraProject:
         for jira_issue in self.jira_issues.values():
             jira_issue.resolve_dependencies(jira_manager)
 
-    def __str__(self):
+    def __str__(self) -> str:
         conn_name = self.jira_connection.connection_name if self.jira_connection is not None else 'unknown'
         return '{}:{} {}:{} {}:{} {}:{} {}:{}'.format(
             'JiraProject', self.project_name,

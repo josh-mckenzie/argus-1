@@ -156,10 +156,10 @@ class JiraDashboard:
     def contains_jira_view(self, jira_view_name: str) -> bool:
         return jira_view_name in self._jira_views
 
-    def save_config(self, config_parser: RawConfigParser):
+    def save_config(self, config_parser: RawConfigParser) -> None:
         config_parser.set('Dashboards', self.name, ','.join(list(self._jira_views.keys())))
 
-    def __str__(self):
+    def __str__(self) -> str:
         result = 'Name: {}'.format(self.name)
         for view in self._jira_views:
             result += ', View: {}'.format(view)

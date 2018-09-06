@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from jira import JIRAError
 
 from src import utils
+from src.static_systems import StaticSystems
 from src.display_filter import DisplayFilter
 from src.jira_filter import JiraFilter
 from src.jira_utils import JiraUtils
@@ -38,8 +39,7 @@ class JiraView:
                               'Not Planned', 'Unresolved', 'Won\'t Do', 'Won\'t Fix'])
     }
 
-    def __init__(self, name, jira_connection):
-        # type: (str, JiraConnection) -> None
+    def __init__(self, name: str, jira_connection: JiraConnection) -> None:
         self.name = name
         self.jira_connection = jira_connection
 
@@ -50,37 +50,36 @@ class JiraView:
 
         self.display_filter = DisplayFilter()
 
-    def add_single_filter(self, name, value, filter_type, and_or):
-        # type: (str, str, str, str) -> None
+    def add_single_filter(self, name: str, value: str, filter_type: str, and_or: str) -> None:
         """
         :param name: field name
         :param value: value to match against
         :param filter_type: 'i' to include, else exclude
         :param and_or: 'AND' or 'OR'
         """
+        assert and_or == 'AND' or and_or == 'OR', 'Expected AND or OR to add_single_filter. Got: {}'.format(and_or)
         if name not in self._jira_filters:
             self._jira_filters[name] = JiraFilter(name, self.jira_connection, and_or)
 
         # don't add logic to confirm validity or overlap, just add it
-        filter = self._jira_filters[name]
-        filter.name = name
+        jira_filter = self._jira_filters[name]
+        jira_filter.name = name
         if filter_type == 'i':
-            filter.include(value)
+            jira_filter.include(value)
         else:
-            filter.exclude(value)
+            jira_filter.exclude(value)
 
-    def add_raw_filter(self, jira_filter):
-        # type: (JiraFilter) -> None
+    def add_raw_filter(self, jira_filter: JiraFilter) -> None:
         self._jira_filters[jira_filter.field_name] = jira_filter
 
-    def owned_by(self, jira_connection):
+    def owned_by(self, jira_connection: JiraConnection) -> bool:
         return jira_connection == self.jira_connection
 
     @classmethod
-    def _build_config(cls, name):
+    def _build_config(cls, name: str) -> str:
         return os.path.join(jira_view_dir, '{}.cfg'.format(name))
 
-    def delete_config(self):
+    def delete_config(self) -> None:
         td = self._build_config(self.name)
         os.remove(td)
 
@@ -114,7 +113,7 @@ class JiraView:
 
         return new_jira_view
 
-    def save_config(self):
+    def save_config(self) -> None:
         config_parser = configparser.RawConfigParser()
         config_parser.add_section('JiraView')
         config_parser.set('JiraView', 'name', self.name)
@@ -126,13 +125,13 @@ class JiraView:
 
         save_argus_config(config_parser, self._build_config(self.name))
 
-    def display_view(self, jira_manager: 'JiraManager') -> None:
+    def display_view(self) -> None:
         df = DisplayFilter.default()
 
         working_issues = list(self.get_issues().values())
         while True:
             try:
-                issues = df.display_and_return_sorted_issues(jira_manager, working_issues)
+                issues = df.display_and_return_sorted_issues(working_issues)
                 print_separator(60)
                 print('[JiraView operations for {}]'.format(self.name))
                 custom = get_input('[f] to manually enter a substring to regex issues in the view' + os.linesep +
@@ -165,7 +164,7 @@ class JiraView:
                 traceback.print_exc()
                 return
 
-    def edit_view(self, team_manager: 'TeamManager', jira_manager: 'JiraManager') -> None:
+    def edit_view(self) -> None:
         print('Current view contents: {}'.format(self))
 
         while True:
@@ -182,21 +181,21 @@ class JiraView:
             if choice == 'q':
                 return
             elif choice == 't':
-                self.edit_team(team_manager)
+                self.edit_team()
             elif choice == 'a':
                 self.add_filter()
             elif choice == 'r':
                 self.remove_filter()
             elif choice == 'd':
-                self.display_view(jira_manager)
+                self.display_view()
 
-    def edit_team(self, team_manager):
+    def edit_team(self) -> None:
         if len(self._teams) > 0:
             print('Currently contained teams:')
             for t in list(self._teams.keys()):
                 team = self._teams[t]
                 print('   Name: {}'.format(team.name))
-                print('      Assignees: {}'.format(','.join(team.members)))
+                print('      Assignees: {}'.format(','.join([str(x) for x in team.members])))
 
         cmd = get_input('[A]dd a team, [R]emove a team, or [Q]uit?')
         if cmd == 'q':
@@ -209,7 +208,7 @@ class JiraView:
                 del self._jira_filters['assignee']
                 del self._jira_filters['reviewer']
                 del self._jira_filters['reviewer2']
-            to_add = team_manager.pick_team()
+            to_add = StaticSystems.team_manager.pick_team()
             if to_add is None:
                 return
             self._teams[to_add.name] = to_add
@@ -221,7 +220,7 @@ class JiraView:
             if conf == 'y':
                 del self._teams[tr]
 
-    def add_filter(self):
+    def add_filter(self) -> None:
         filter_value = None
         # Adding to prevent PEP complaint.
         filter_name = None
@@ -265,7 +264,7 @@ class JiraView:
 
         self.add_single_filter(filter_name, filter_value, filter_type, 'AND')
 
-    def remove_filter(self):
+    def remove_filter(self) -> None:
         to_remove = pick_value('Remove value from which JiraFilter?', list(self._jira_filters.keys()))
         if to_remove is None:
             return
@@ -274,11 +273,10 @@ class JiraView:
             del self._jira_filters[to_remove]
         self.save_config()
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return len(self._jira_filters) == 0
 
-    def get_issues(self, string_matches=None):
-        # type: (List[str]) -> Dict[str, JiraIssue]
+    def get_issues(self, string_matches: List[str] = None) -> Dict[str, JiraIssue]:
         """
         Applies nested JiraFilters to all associated cached JiraProjects for the contained JiraConnection
         :param string_matches: substring(s) to match against JiraIssue fields for further refining of a search
@@ -369,16 +367,16 @@ class JiraView:
 
         return matching_issues
 
-    def contains_team(self, team):
+    def contains_team(self, team: str) -> bool:
         return team in self._teams
 
-    def clone(self):
+    def clone(self) -> 'JiraView':
         result = JiraView('{}_clone'.format(self.name), self.jira_connection)
         for key, jf in self._jira_filters.items():
             result.add_raw_filter(jf)
         return result
 
-    def __str__(self):
+    def __str__(self) -> str:
         result = os.linesep + '[{}]'.format(self.name)
         result += os.linesep + '   Jira Connection: {}'.format(self.jira_connection)
         if len(self._jira_filters) > 0:

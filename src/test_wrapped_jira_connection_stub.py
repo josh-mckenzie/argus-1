@@ -28,12 +28,11 @@ class TestWrappedJiraConnectionStub:
     """
     name_prefix = 1
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.prefix = TestWrappedJiraConnectionStub.name_prefix
         TestWrappedJiraConnectionStub.name_prefix += 1
 
-    def projects(self):
-        # type: () -> List[Project]
+    def projects(self) -> List[Project]:
         result = list()
         for x in range(0, 10, 1):
             temp_project = Project(None, None)
@@ -44,8 +43,7 @@ class TestWrappedJiraConnectionStub:
         return result
 
     @staticmethod
-    def search_issues():
-        # type: () -> ResultList[Issue]
+    def search_issues() -> ResultList[Issue]:
         result = ResultList()
 
         for x in range(0, 10, 1):

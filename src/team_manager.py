@@ -47,11 +47,11 @@ class TeamManager:
         ReportType.META: ReportMeta()
     }
 
-    def __init__(self):
-        self._teams = {}
+    def __init__(self) -> None:
+        self._teams = {}  # type: Dict[str, Team]
         self._organizations = {}  # type: Dict[str, set[str]]
 
-    def prompt_for_team_addition(self, jira_manager):
+    def prompt_for_team_addition(self, jira_manager: JiraManager) -> None:
         name = get_input('Name this new team:', lowered=False)
 
         jira_connection_name = pick_value('Which JIRA Connection owns this team?', jira_manager.possible_connections(), True, 'Cancel')
@@ -101,14 +101,14 @@ class TeamManager:
         del self._organizations[selection]
         self._save_config()
 
-    def list_teams(self):
+    def list_teams(self) -> None:
         print_separator(40)
         print('Currently defined teams:')
         for team in list(self._teams.values()):
             print('{}'.format(team))
         print_separator(40)
 
-    def pick_team(self, skip_list=None) -> Optional[Team]:
+    def pick_team(self, skip_list: Optional[List[str]] = None) -> Optional[Team]:
         if skip_list is None:
             valid_names = list(self._teams.keys())
         else:
@@ -118,7 +118,7 @@ class TeamManager:
             return None
         return self._teams[team_name]
 
-    def get_team_by_name(self, team_name):
+    def get_team_by_name(self, team_name: str) -> Team:
         return self._teams[team_name]
 
     def edit_team(self, jira_manager: JiraManager, team_name: str = None) -> None:
@@ -236,14 +236,14 @@ class TeamManager:
             return None
         return target_team.get_member(target_member_name)
 
-    def remove_linked_member(self):
+    def remove_linked_member(self) -> None:
         target_member = self._pick_member_for_linkage_operation('Remove')
         if target_member is None:
             return
         if target_member.remove_alias():
             self._save_config()
 
-    def run_org_report(self, jira_manager):
+    def run_org_report(self, jira_manager: JiraManager) -> None:
         """
         Sub-menu driven method to run a specific type of report across multiple teams within an organization
         """
@@ -296,7 +296,7 @@ class TeamManager:
                 traceback.print_exc()
                 pause()
 
-    def run_team_reports(self, jira_manager):
+    def run_team_reports(self, jira_manager: JiraManager) -> None:
         """
         Sub-menu driven method to run some specific reports of interest against teams. This will take into account
         linked members and run the report for all tickets across multiple JIRA connections.
@@ -466,7 +466,7 @@ class TeamManager:
             pause()
 
     @classmethod
-    def from_file(cls):
+    def from_file(cls) -> 'TeamManager':
         config_parser = configparser.RawConfigParser()
         try:
             result = TeamManager()
@@ -511,7 +511,7 @@ class TeamManager:
             traceback.print_exc()
             raise e
 
-    def _save_config(self):
+    def _save_config(self) -> None:
         config_parser = configparser.RawConfigParser()
         # Save team names comma delim
         config_parser.add_section('manager')

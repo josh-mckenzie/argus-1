@@ -26,7 +26,7 @@ class Team:
     connected to their work.
     """
 
-    def __init__(self, name, jira_connection_name):
+    def __init__(self, name: str, jira_connection_name: str) -> None:
         self.name = name
 
         # Only used for identification during serialization
@@ -62,7 +62,7 @@ class Team:
             del self._team_members[to_delete]
 
     @property
-    def root_name(self):
+    def root_name(self) -> str:
         return '{}:{}'.format(self.name, self.jira_connection_name)
 
     @property
@@ -102,11 +102,11 @@ class Team:
         for member in list(self._team_members.values()):
             utils.argus_debug('At end of add_owned_issues for team: {}. Member: {}'.format(self.name, member))
 
-    def clear_jira_issues(self):
+    def clear_jira_issues(self) -> None:
         for member in list(self._team_members.values()):
             member.clear()
 
-    def __str__(self):
+    def __str__(self) -> str:
         result = '{}:'.format(self.name)
         for member in sorted([x.primary_user_name for x in list(self._team_members.values())]):
             result += os.linesep + '   {}'.format(member)

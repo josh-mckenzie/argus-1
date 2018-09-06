@@ -114,11 +114,11 @@ class JiraDependency:
         return JiraDependency.dep_map[key]
 
     @property
-    def target_issue_key(self):
+    def target_issue_key(self) -> str:
         try:
             assert self.target is not None, 'Attempted to access target_issue_key in JiraDependency but target is None'
             assert self.target.issue_key is not None, 'Have target with no issue_key. What we know of target: {}'.format(self.target)
-        except AttributeError as ae:
+        except AttributeError:
             print('Attempted to access a contained JiraIssue as target in JiraDependency missing an issue_key. What we know of target: {}'.format(self.target))
             exit(-1)
         return self.target.issue_key
@@ -146,11 +146,11 @@ class JiraDependency:
         fields = JiraDependency.validate_input_data(raw_data)
         return fields[0]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'IssueKey: {}. Type: {}. Direction: {}'.format(self.target_issue_key, self.type, self.direction)
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'JiraDependency') -> bool:
         return self.target.issue_key == other.target.issue_key and self.type == other.type and self.direction == other.direction
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.target_issue_key, self.type, self.direction))

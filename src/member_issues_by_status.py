@@ -38,7 +38,7 @@ class JiraUserName:
         self.team_name = team_name
 
     @property
-    def to_combined_string(self):
+    def to_combined_string(self) -> str:
         return '{}:{}:{}'.format(self.user_name, self.jira_connection_name, self.team_name)
 
     @classmethod
@@ -48,7 +48,7 @@ class JiraUserName:
             raise Exception('Got bad string to JiraUserName.from_combined_string. Expected : delim with 3 members, got: {}'.format(combined_string))
         return JiraUserName(sa[0], sa[1], sa[2])
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_combined_string
 
 
@@ -71,7 +71,7 @@ class MemberIssuesByStatus:
         self.reviewer: List[JiraIssue] = []
         self.reviewed: List[JiraIssue] = []
 
-    def clone_empty(self):
+    def clone_empty(self) -> 'MemberIssuesByStatus':
         """
         Creates a clone of this member without any populated JiraIssues
         """
@@ -112,7 +112,7 @@ class MemberIssuesByStatus:
         return self.primary_name.to_combined_string
 
     @property
-    def primary_user_name(self):
+    def primary_user_name(self) -> str:
         return self.primary_name.user_name
 
     @property
@@ -134,7 +134,7 @@ class MemberIssuesByStatus:
         del self._aliased_names[to_remove]
         return True
 
-    def closed_test_count(self):
+    def closed_test_count(self) -> int:
         return len([x for x in self.closed if x.is_test])
 
     def add_if_owns(self, jira_connection: JiraConnection, jira_issue: JiraIssue) -> bool:
@@ -171,7 +171,7 @@ class MemberIssuesByStatus:
         return True
 
     @staticmethod
-    def _debug_ticket(jira_issue, to_print: str):
+    def _debug_ticket(jira_issue, to_print: str) -> None:
         """
         Developer tool to debug matching / JiraIssue categorization logic for reports
         """
@@ -179,7 +179,7 @@ class MemberIssuesByStatus:
             print('DEBUG: {}'.format(to_print))
 
     @staticmethod
-    def is_debug_jira_issue(jira_issue: JiraIssue):
+    def is_debug_jira_issue(jira_issue: JiraIssue) -> bool:
         # Change XXX-1234 to the ticket you'd like to debug, add calls to _debug_ticket in relevant locations
         # return jira_issue.issue_key == 'XXX-1234'
         return False
@@ -200,23 +200,23 @@ class MemberIssuesByStatus:
         return None
 
     @classmethod
-    def formatted_header(cls):
+    def formatted_header(cls) -> str:
         return '{:40} {:15} {:15} {:15} {:15} {:15}'.format(
             'name(s)', 'assigned', 'reviewer', 'closed test', 'closed', 'reviewed')
 
-    def formatted_summary(self):
+    def formatted_summary(self) -> str:
         return '{:40} {:<15} {:<15} {:<15} {:<15} {:<15}'.format(
             str(sorted(self._aliased_names.keys()))[:40].ljust(40), len(self.assigned), len(self.reviewer),
             self.closed_test_count(), len(self.closed),
             len(self.reviewed))
 
-    def sort_tickets(self):
+    def sort_tickets(self) -> None:
         self.assigned = JiraUtils.sort_jira_issues(self.assigned)
         self.closed = JiraUtils.sort_jira_issues(self.closed)
         self.reviewer = JiraUtils.sort_jira_issues(self.reviewer)
         self.reviewed = JiraUtils.sort_jira_issues(self.reviewed)
 
-    def clear(self):
+    def clear(self) -> None:
         self.assigned = []
         self.closed = []
         self.reviewer = []
@@ -290,7 +290,7 @@ class MemberIssuesByStatus:
 
         return issues_displayed
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'primary name: {} known aliases: {} assigned: {} reviewer: {} closed test: {} closed: {} reviewed: {}'.format(
             self.primary_name,
             sorted(self._aliased_names.keys()),

@@ -25,8 +25,7 @@ if TYPE_CHECKING:
     from typing import List
 
 
-def download_builds(jenkins_obj, job_name):
-    # type: (Jenkins, str) -> List[JenkinsBuild]
+def download_builds(jenkins_obj: Jenkins, job_name: str) -> List['JenkinsBuild']:
     """
     Download build data for a Jenkins job and convert to Argus JenkinsBuild object.
 
@@ -50,8 +49,7 @@ def download_builds(jenkins_obj, job_name):
 
 
 class JenkinsBuild:
-    def __init__(self, build):
-        # type: (Build) -> None
+    def __init__(self, build: Build) -> None:
         """
         Creates a container class for a Jenkins Build object.
 
