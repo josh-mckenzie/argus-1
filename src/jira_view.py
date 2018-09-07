@@ -134,11 +134,12 @@ class JiraView:
                 issues = df.display_and_return_sorted_issues(working_issues)
                 print_separator(60)
                 print('[JiraView operations for {}]'.format(self.name))
-                custom = get_input('[f] to manually enter a substring to regex issues in the view' + os.linesep +
-                                   '[c] to clear all regex filtering' + os.linesep +
-                                   '[#] Integer value to open ticket in browser ' + os.linesep +
-                                   '[q] to quit' + os.linesep +
-                                   ':')
+                input_prompt = ("[f] to manually enter a substring to regex issues in the view\n"
+                                "[c] to clear all regex filtering\n"
+                                "[#] Integer value to open ticket in browser\n"
+                                "[q] to quit\n"
+                                ":")
+                custom = get_input(input_prompt)
                 if custom == 'q':
                     return
                 elif custom == 'f':

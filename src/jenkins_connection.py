@@ -19,7 +19,7 @@ from configparser import RawConfigParser
 from getpass import getpass
 from typing import TYPE_CHECKING
 
-from jenkinsapi.custom_exceptions import UnknownJob
+from jenkinsapi import custom_exceptions
 from jenkinsapi.jenkins import Jenkins
 from requests.exceptions import HTTPError
 from src.jenkins_interface import download_builds
@@ -204,7 +204,7 @@ class JenkinsConnection:
             jenkins_job = JenkinsJob(job_name, builds)
             jenkins_job_name = jenkins_job.name
             self.jenkins_jobs[jenkins_job_name] = jenkins_job
-        except UnknownJob:
+        except custom_exceptions.UnknownJob:
             sys.stdout.write('Job not found, please try again.\n')
 
     def needs_update(self, job_name: str) -> bool:
@@ -233,7 +233,7 @@ class JenkinsConnection:
             jenkins_job_name = jenkins_job.name
             self.jenkins_jobs[jenkins_job_name] = jenkins_job
             return True
-        except UnknownJob:
+        except custom_exceptions.UnknownJob:
             print('Job not found, please try again.')
             return False
 

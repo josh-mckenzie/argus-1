@@ -92,7 +92,7 @@ class DisplayFilter:
         df.use_pager = False
         return df
 
-    def include_column(self, column_name: str, pretty_name: str, width: int, index: int=-1) -> None:
+    def include_column(self, column_name: str, pretty_name: str, width: int, index: int = -1) -> None:
         """
         :param index: Index to append column to, -1 (default) to append at end of current list
         """
@@ -130,7 +130,7 @@ class DisplayFilter:
 
     def display_and_return_sorted_issues(self,
                                          issues: List[JiraIssue],
-                                         start_idx: int=1,
+                                         start_idx: int = 1,
                                          filters: Optional[Dict['Column', str]] = None,
                                          force_show_dependencies: bool = False,
                                          ) -> List[JiraIssue]:

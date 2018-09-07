@@ -43,7 +43,7 @@ class TestWrappedJiraConnectionStub:
         return result
 
     @staticmethod
-    def search_issues() -> ResultList[Issue]:
+    def search_issues() -> ResultList:
         result = ResultList()
 
         for x in range(0, 10, 1):

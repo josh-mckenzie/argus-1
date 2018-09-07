@@ -441,7 +441,7 @@ def get_connection_name(filename: str) -> str:
 
 
 class MultiTasker:
-    def __init__(self, max_threads: int = 5, stagger_time: float=.2, pause_time: int=1) -> None:
+    def __init__(self, max_threads: int = 5, stagger_time: float = .2, pause_time: int = 1) -> None:
         """
         Runs jobs asynchronously
         :param max_threads: The max # of threads allowed at a time

@@ -181,7 +181,7 @@ class JiraManager:
         self._resolve_issue_dependencies()
         print('JiraManager initialization complete.')
 
-    def add_connection(self, prompt: str='Name this connection:') -> Optional[JiraConnection]:
+    def add_connection(self, prompt: str = 'Name this connection:') -> Optional[JiraConnection]:
         """
         Swallows exceptions to allow for errors during JiraProject caching w/out invalidating addition of JiraConnection
         """
@@ -648,7 +648,7 @@ class JiraManager:
                 return False
         return True
 
-    def pick_jira_connection(self, prompt: str='Which JIRA connection?') -> Optional[JiraConnection]:
+    def pick_jira_connection(self, prompt: str = 'Which JIRA connection?') -> Optional[JiraConnection]:
         if not self._prompt_connection_add_if_none():
             return None
 

@@ -16,9 +16,11 @@
 # limitations under the License.
 import optparse
 import signal
+import sys
 
 from getpass import getpass
 
+from src import utils
 from src.main_menu import MainMenu
 from src.utils import DESCRIPTION, Config, init_tab_completer
 
@@ -40,8 +42,7 @@ parser.add_option('-w', '--web_server', help='Run in WebServer mode', action='st
 
 optvalues = optparse.Values()
 (options, arguments) = parser.parse_args(sys.argv[1:], values=optvalues)
-
-signal.signal(signal.SIGINT, self.signal_handler)
+option_dict = vars(options)
 
 if hasattr(options, 'verbose'):
     utils.debug = True
@@ -60,5 +61,9 @@ while Config.MenuPass == '':
     Config.MenuPass = getpass(msg)
 
 # TODO: Flip between web server mode and interactive
-menu = MainMenu()
-menu.display()
+if hasattr(options, 'web_server'):
+    print('Web server not implemented yet.')
+else:
+    menu = MainMenu(option_dict)
+    signal.signal(signal.SIGINT, menu.signal_handler)
+    menu.display()

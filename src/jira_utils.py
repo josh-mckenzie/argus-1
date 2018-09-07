@@ -85,7 +85,7 @@ class JiraUtils:
     @staticmethod
     def get_issues_for_project(jira_connection: 'JiraConnection',
                                project_name: str,
-                               update_cutoff: Optional[str]=None
+                               update_cutoff: Optional[str] = None
                                ) -> List['JiraIssue']:
         """
         Queries out all results for a given project on the provided JiraConnection after a specified update time.

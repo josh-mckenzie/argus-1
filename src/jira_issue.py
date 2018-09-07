@@ -262,7 +262,7 @@ class JiraIssue(dict):
         """
         return label in self.labels
 
-    def matches_label(self, to_match: str, case_sensitive: bool=True) -> bool:
+    def matches_label(self, to_match: str, case_sensitive: bool = True) -> bool:
         """
         Regex match for inclusion of part of a string in labels.
         """
