@@ -24,10 +24,8 @@ import time
 from configparser import RawConfigParser
 from glob import glob
 from subprocess import Popen
-from typing import Optional, List, Tuple, Any
+from typing import Any, Callable, List, Optional, Tuple
 from urllib import request
-
-from src.jira_issue import JiraIssue
 
 DESCRIPTION = 'argus, command-line JIRA multi-tool'
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -88,14 +86,6 @@ def build_config_name(file_name: str) -> str:
     if unit_test:
         return os.path.join('tests', file_name)
     return file_name
-
-
-def save_argus_data(items: List[JiraIssue], file_name: str) -> None:
-    if unit_test:
-        file_name = os.path.join('tests', file_name)
-    with open(file_name, 'wb') as cf:
-        for item in items:
-            item.serialize(cf)
 
 
 def clear() -> None:
@@ -171,7 +161,7 @@ def is_yes(question: str) -> bool:
             print("Invalid input {}. Please try again...".format(val))
 
 
-def encode(key: str, to_encode: str) -> bytes:
+def encode(key: str, to_encode: str) -> str:
     """
     Courtesy of http://stackoverflow.com/questions/2490334/simple-way-to-encode-a-string-according-to-a-password
     Mostly just looking to keep from having an easily readable password stored on the fs
@@ -297,8 +287,8 @@ class DependencyType:
 
 class Config:
     JENKINS_URL = 'unknown'
-    JENKINS_BRANCHES = 'unknown'
-    JENKINS_PROJECT = 'unknown'
+    JENKINS_BRANCHES = []  # type: List[str]
+    JENKINS_PROJECT = []  # type: List[str]
 
     if is_win():
         Browser = 'chrome'
@@ -338,9 +328,9 @@ class Config:
         if not config_parser.has_section(build_options_str):
             config_parser.add_section(build_options_str)
         if not config_parser.has_option(build_options_str, builds_to_check_str):
-            config_parser.set(build_options_str, builds_to_check_str, 30)
+            config_parser.set(build_options_str, builds_to_check_str, str(30))
         if not config_parser.has_option(build_options_str, recent_str):
-            config_parser.set(build_options_str, recent_str, 3)
+            config_parser.set(build_options_str, recent_str, str(3))
 
         with open(conf_path, 'w') as config_file:
             config_parser.write(config_file)
@@ -360,7 +350,7 @@ class Config:
             config_parser.read(custom_params_path)
             Config.JENKINS_URL = config_parser.get('JENKINS', 'url').rstrip('/')
             Config.JENKINS_BRANCHES = config_parser.get('JENKINS', 'branches').split(',')
-            Config.JENKINS_PROJECT = config_parser.get('JENKINS', 'project_name')
+            Config.JENKINS_PROJECT = list(config_parser.get('JENKINS', 'project_name'))
 
 
 def get_build_options() -> Tuple[int, int]:
@@ -407,6 +397,8 @@ def print_separator(count: int, char: str = '-') -> None:
 def argus_debug(value: str) -> None:
     if debug:
         print('DEBUG: {}'.format(value))
+        if argus_log is None:
+            return
         argus_log.write(value.encode('utf-8') + os.linesep)
 
 
@@ -454,14 +446,14 @@ class MultiTasker:
         self.pause = pause_time
         self.threads = []  # type: List[threading.Thread]
 
-    def wrap_job(self, target: function, args: tuple):
+    def wrap_job(self, target: Callable, args: tuple):
         with threading.Lock():
             self.running_count += 1
         target(*args)
         with threading.Lock():
             self.running_count -= 1
 
-    def add_job(self, target: function, args: tuple):
+    def add_job(self, target: Callable, args: tuple):
         thread = threading.Thread(target=self.wrap_job, args=(target, args))
         self.threads.append(thread)
 
@@ -490,7 +482,7 @@ def clear_tab_complete_vocabulary() -> None:
     presses tab.
     :return:
     """
-    def completer():
+    def completer() -> None:
         return None
     readline.set_completer(completer)
 
@@ -500,7 +492,7 @@ def build_regex_pattern(str_to_build: str):
     return re.compile(pattern)
 
 
-def tab_complete(func: function, args: tuple, word_list: List[str], regex: bool = False, cleanup: bool = False):
+def tab_complete(func: Callable, args: tuple, word_list: List[str], regex: bool = False, cleanup: bool = False) -> Optional[str]:
     """
     Wraps a function that takes user input with a vocabulary to support tab completion
     :param func: The function to run, ie raw_input, input, get_input
@@ -510,7 +502,7 @@ def tab_complete(func: function, args: tuple, word_list: List[str], regex: bool 
     :param cleanup: When True, vocabulary will be reset upon completion (prevents inaccurate tab completions)
     :return: list of selection matches, if only one match a list will still be returned
     """
-    def completer(text: str, state: int) -> str:
+    def completer(text: str, state: int) -> Optional[str]:
         options = [word for word in word_list if word.startswith(text)]
         return options[state] if state < len(options) else None
 
@@ -522,5 +514,5 @@ def tab_complete(func: function, args: tuple, word_list: List[str], regex: bool 
 
     if regex and '*' in value:
         pattern = build_regex_pattern(value)
-        return filter(pattern.match, word_list)
-    return [value]
+        return next(filter(pattern.match, word_list))
+    return value

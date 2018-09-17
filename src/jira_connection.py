@@ -16,7 +16,7 @@ import configparser
 import itertools
 import os
 import traceback
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Dict
 
 import requests
 from jira.client import JIRAError, JIRA
@@ -30,9 +30,6 @@ from src.utils import (ConfigError, clear, decode, encode,
                        encode_password, get_input, pick_value,
                        save_argus_config, jira_connection_dir)
 
-if TYPE_CHECKING:
-    from src.jira_manager import JiraManager
-
 
 class JiraConnection:
 
@@ -41,7 +38,7 @@ class JiraConnection:
     """
 
     def __init__(self, connection_name='unknown', url='unknown', user_name='unknown', password='unknown') -> None:
-        self.possible_projects = []
+        self.possible_projects = []  # type: List[str]
 
         self.connection_name = connection_name
         self._url = url.rstrip('/')
@@ -49,9 +46,9 @@ class JiraConnection:
         self._pass = password
         self._wrapped_jira_connection = None
 
-        # Map of str -> JiraProject. Internal representation is simply name of project. We have a 1:many mapping of JiraConnection
+        # Internal representation is simply name of project. We have a 1:many mapping of JiraConnection
         # to JiraProjects, and cannot have multiple projects with the same name on a single JIRA underlying object.
-        self._cached_jira_projects = {}
+        self._cached_jira_projects = {}  # type: Dict[str, JiraProject]
 
         if connection_name == 'unknown':
             raise ConfigError('Got JiraConnection constructor call with no connection_name. Cannot use this.')
@@ -100,7 +97,7 @@ class JiraConnection:
 
             return result
         except configparser.NoOptionError as e:
-            print('Failed to create JiraConnection from file: {}. Error: {}'.format(config_file, e.message))
+            print('Failed to create JiraConnection from file: {}. Error: {}'.format(config_file, str(e)))
             return None
 
     def save_config(self) -> None:
@@ -214,7 +211,9 @@ class JiraConnection:
     def _refresh_project_names(self) -> None:
         # Cache project names locally within this object
         print('Querying project names from {}'.format(self.connection_name))
-        projects = self._wrapped_jira_connection.projects()
+        projects = []
+        if self._wrapped_jira_connection is not None:
+            projects = self._wrapped_jira_connection.projects()
         self.possible_projects = []
         for p in projects:
             if 'deprecated' not in p.name:
@@ -287,7 +286,8 @@ class JiraConnection:
     def contains_project(self, project_name) -> bool:
         return project_name in self.possible_projects
 
-    def search_issues(self, *args, **kwargs) -> List[JiraIssue]:
+    # Not annotating type since it can return a List or a ResultList
+    def search_issues(self, *args, **kwargs):
         return self._wrapped_jira_connection.search_issues(*args, **kwargs)
 
     @property

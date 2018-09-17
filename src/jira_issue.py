@@ -79,7 +79,7 @@ class JiraIssue(dict):
                     dict.__setitem__(self, 'issuelinks', result)
 
                 elif k == 'fixVersions' and len(v) > 0:
-                    result = []
+                    fa = []
 
                     # Some backwards compat logic necessary here based on serialized version on disk.
                     # This can be stored as a jira.resources.Version object, a raw string comma delim with name=, or a
@@ -87,21 +87,21 @@ class JiraIssue(dict):
                     for version in v:
                         # If serialized in a jira.resources.Version object, we only care about fixver string
                         if type(version) == Version:
-                            result.append(str(version.name))
+                            fa.append(str(version.name))
                         # Otherwise we convert from an interim raw string format to a parsed array of version strings:
                         #     [<JIRA Version: name='1.1.2', id='12321445'>, <JIRA Version: name='1.2.0 beta 1', id='12319262'>]
                         elif isinstance(version, str) and 'name' in version:
                             result_match = re.search('name=\'([0-9A-Za-z_\.]+)\'', version)
                             if not result_match:
                                 raise ConfigError('WARNING! Discovered fixVersions string with unexpected format. Expected "name=([value])" and got: {}.'.format(version))
-                            result.append(result_match.group(1))
+                            fa.append(result_match.group(1))
                         # If it's a list, we assume it's the list of the versions we're interested in. May need to revisit
                         # this assumption later.
                         elif isinstance(version, list):
-                            result.append(version)
+                            fa.extend(version)
                         else:
                             raise ConfigError('Received unexpected type in fixVersion: {} for ticket: {}'.format(type(version), self.issue_key))
-                    self['fixVersions'] = ','.join(result)
+                    self['fixVersions'] = ','.join(fa)
                 else:
                     dict.__setitem__(self, str(k), str(v))
 
@@ -315,7 +315,7 @@ class JiraIssue(dict):
             self.dependencies = set()  # type: Set[JiraDependency]
 
         if not hasattr(self, 'issuelinks'):
-            self['issuelinks'] = set()  # type: Set[str]
+            self['issuelinks'] = set()
         elif len(self['issuelinks']) != 0:
             dep_array = self['issuelinks'].split(',')
             for dep_str in dep_array:

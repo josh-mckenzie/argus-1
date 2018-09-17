@@ -14,9 +14,12 @@
 
 import os
 from configparser import RawConfigParser
-
+from typing import TYPE_CHECKING
 
 from src.utils import build_config_file, jenkins_views_dir, save_argus_config
+
+if TYPE_CHECKING:
+    from src.jenkins_connection import JenkinsConnection
 
 
 class JenkinsView:

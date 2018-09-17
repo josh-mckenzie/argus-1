@@ -1,25 +1,19 @@
 import configparser
 import os
 import traceback
-from typing import TYPE_CHECKING
+from typing import List, Dict
 
 from jira import JIRAError
 
 from src import utils
-from src.static_systems import StaticSystems
 from src.display_filter import DisplayFilter
+from src.jira_connection import JiraConnection
 from src.jira_filter import JiraFilter
+from src.jira_issue import JiraIssue
 from src.jira_utils import JiraUtils
+from src.team_manager import TeamManager
 from src.utils import (ConfigError, argus_debug, get_input, pick_value,
                        print_separator, save_argus_config, jira_view_dir, pause)
-
-if TYPE_CHECKING:
-    from typing import Dict, List
-    from src.jira_connection import JiraConnection
-    from src.jira_manager import JiraManager
-    from src.jira_issue import JiraIssue
-    from src.team_manager import TeamManager
-    from src.team import Team
 
 
 class JiraView:
@@ -125,13 +119,13 @@ class JiraView:
 
         save_argus_config(config_parser, self._build_config(self.name))
 
-    def display_view(self) -> None:
+    def display_view(self, jira_manager: 'JiraManager') -> None:
         df = DisplayFilter.default()
 
         working_issues = list(self.get_issues().values())
         while True:
             try:
-                issues = df.display_and_return_sorted_issues(working_issues)
+                issues = df.display_and_return_sorted_issues(jira_manager, working_issues)
                 print_separator(60)
                 print('[JiraView operations for {}]'.format(self.name))
                 input_prompt = ("[f] to manually enter a substring to regex issues in the view\n"
@@ -165,7 +159,7 @@ class JiraView:
                 traceback.print_exc()
                 return
 
-    def edit_view(self) -> None:
+    def edit_view(self, jira_manager: 'JiraManager', team_manager: TeamManager) -> None:
         print('Current view contents: {}'.format(self))
 
         while True:
@@ -182,15 +176,15 @@ class JiraView:
             if choice == 'q':
                 return
             elif choice == 't':
-                self.edit_team()
+                self.edit_team(team_manager)
             elif choice == 'a':
                 self.add_filter()
             elif choice == 'r':
                 self.remove_filter()
             elif choice == 'd':
-                self.display_view()
+                self.display_view(jira_manager)
 
-    def edit_team(self) -> None:
+    def edit_team(self, team_manager: TeamManager) -> None:
         if len(self._teams) > 0:
             print('Currently contained teams:')
             for t in list(self._teams.keys()):
@@ -209,7 +203,7 @@ class JiraView:
                 del self._jira_filters['assignee']
                 del self._jira_filters['reviewer']
                 del self._jira_filters['reviewer2']
-            to_add = StaticSystems.team_manager.pick_team()
+            to_add = team_manager.pick_team()
             if to_add is None:
                 return
             self._teams[to_add.name] = to_add

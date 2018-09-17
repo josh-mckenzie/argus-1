@@ -41,7 +41,7 @@ class JenkinsReport:
         return [job_name for job_list in list(self.connection_dict.values()) for job_name in job_list]
 
     @property
-    def job_dict(self) -> Dict[JenkinsJob: str]:
+    def job_dict(self) -> Dict[JenkinsJob, str]:
         job_dict = {}
         for connection_name, job_name_list in self.connection_dict.items():
             for job_name in job_name_list:
@@ -119,7 +119,7 @@ class JenkinsReport:
                                 'Recent Failed Builds ({})'.format(recent_builds_to_check)))
         print(separator)
         for i, job in enumerate(job_list, start=1):
-            print(format_str.format(i, job.name, self.job_dict[job.name], job.last_build_tests,
+            print(format_str.format(i, job.name, self.job_dict[job], job.last_build_tests,
                                     job.last_build_date, job.health, job.build_history,
                                     job.recent_history))
         print(separator)

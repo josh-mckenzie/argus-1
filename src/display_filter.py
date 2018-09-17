@@ -129,6 +129,7 @@ class DisplayFilter:
         return header + os.linesep
 
     def display_and_return_sorted_issues(self,
+                                         jira_manager: 'JiraManager',
                                          issues: List[JiraIssue],
                                          start_idx: int = 1,
                                          filters: Optional[Dict['Column', str]] = None,
@@ -145,7 +146,7 @@ class DisplayFilter:
 
         # add padding to account for numbered tickets
         if filters is None:
-            filters = {}  # type: Dict[Column, str]
+            filters = {}
         result = self._construct_header()
 
         filtered_count = 0
@@ -154,7 +155,7 @@ class DisplayFilter:
             # We reset our circular dependency sentinel for each issue so as not to exclude dependencies for already
             # viewed tickets while still preventing meaningless duplication on a chain.
             DisplayFilter._seen_keys = set()
-            result += self._format_jira_issue(issue, filters, displayed_issues, None, force_show_dependencies)
+            result += self._format_jira_issue(jira_manager, issue, filters, displayed_issues, None, force_show_dependencies)  # type: ignore
 
         if self.use_pager:
             pydoc.pager(result)
@@ -166,9 +167,10 @@ class DisplayFilter:
         return displayed_issues
 
     def _format_jira_issue(self,
-                           issue: 'JiraIssue',
+                           jira_manager: 'JiraManager',
+                           issue: JiraIssue,
                            filters: Dict['Column', str],
-                           displayed_issues: List['JiraIssue'],
+                           displayed_issues: List[JiraIssue],
                            dependency: Optional[JiraDependency] = None,
                            force_show_dependencies: bool = False
                            ) -> str:
@@ -183,7 +185,7 @@ class DisplayFilter:
         if self._current_depth > self._max_depth:
             return ''
 
-        result = self._build_issue_row(issue, filters, dependency)
+        result = self._build_issue_row(jira_manager, issue, filters, dependency)
         DisplayFilter._seen_keys.add(issue.issue_key)
 
         # if we're filtered out on this row, we move on
@@ -200,12 +202,13 @@ class DisplayFilter:
                 # We only skip if both the report allow it and the global setting specifies it
                 elif dependency.target.is_closed and utils.show_only_open_dependencies and self.open_only:
                     continue
-                result += self._format_jira_issue(dependency.target, filters, displayed_issues, dependency)
+                result += self._format_jira_issue(jira_manager, dependency.target, filters, displayed_issues, dependency)
         DisplayFilter._current_depth -= 1
 
         return result
 
     def _build_issue_row(self,
+                         jira_manager: 'JiraManager',
                          issue: 'JiraIssue',
                          filters: Dict['Column', str],
                          dependency: Optional['JiraDependency'] = None
@@ -229,7 +232,7 @@ class DisplayFilter:
             if dependency is not None and column.pretty_name == DisplayFilter.RELATIONSHIP_STRING:
                 val = dependency.pretty_type()
             else:
-                val = JiraUtils.retrieve_field_value(issue, column.name)
+                val = JiraUtils.retrieve_field_value(jira_manager, issue, column.name)
 
             # filters are include-only, so if we don't have a value but do have includes, drop it
             if filters is not None:

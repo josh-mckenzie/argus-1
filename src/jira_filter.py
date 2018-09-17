@@ -42,7 +42,7 @@ class JiraFilter:
                  jira_connection: JiraConnection,
                  query_type: str = 'AND',
                  includes: Optional[List[str]] = None,
-                 excludes: Optional[List[str]] = None):
+                 excludes: Optional[List[str]] = None) -> None:
         self._field = field
         self._jira_connection = jira_connection
 

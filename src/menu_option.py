@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional
+from typing import Optional, Callable
 
 
 class MenuOption:
@@ -20,7 +20,7 @@ class MenuOption:
     Contains a string representing a member and a method delegate to call on invocation
     """
 
-    entry_name = "Unknown"
+    entry_name = None
     entry_method = None
 
     def __init__(self, hotkey: Optional[str], name: Optional[str], method: Optional[function], pause: bool = True) -> None:
@@ -43,7 +43,7 @@ class MenuOption:
         return MenuOption(None, None, None)
 
     @staticmethod
-    def return_to_previous_menu(previous_menu_call: function) -> 'MenuOption':
+    def return_to_previous_menu(previous_menu_call: Callable) -> 'MenuOption':
         return MenuOption('q', 'Return to previous menu', previous_menu_call, pause=False)
 
     @staticmethod

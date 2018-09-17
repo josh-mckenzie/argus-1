@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 import sys
 from subprocess import Popen
 from typing import Dict, List, Optional
 from typing import TYPE_CHECKING
 
-from src.static_systems import StaticSystems
+from src import utils
 from src.jira_issue import JiraIssue
 from src.utils import browser, ConfigError
 
@@ -70,7 +70,7 @@ class JiraUtils:
         return results
 
     @staticmethod
-    def get_single_issue(jira_connection: 'JiraConnection', issue_key: str) -> JiraIssue:
+    def get_single_issue(jira_connection: 'JiraConnection', issue_key: str) -> Optional[JiraIssue]:
         """
         Queries out a single JiraIssue. Used for testing
         """
@@ -78,9 +78,10 @@ class JiraUtils:
         print('Getting issue with JQL: {}'.format(jql))
         queried = jira_connection.search_issues(jql, startAt=0)
         assert len(queried) == 1, 'Expected 1 result for issuekey {}. Got {}'.format(issue_key, len(queried))
+        ji = None
         for issue in queried:
             ji = JiraIssue(jira_connection, issue)
-            return ji
+        return ji
 
     @staticmethod
     def get_issues_for_project(jira_connection: 'JiraConnection',
@@ -116,14 +117,14 @@ class JiraUtils:
         return results
 
     @classmethod
-    def retrieve_field_value(cls, issue: JiraIssue, field: str) -> str:
+    def retrieve_field_value(cls, jira_manager: 'JiraManager', issue: JiraIssue, field: str) -> str:
         if field not in issue:
             return ''
         elif field in issue:
             return issue[field]
         else:
             # need to translate field based on custom fields for cached JiraProjects inside JiraIssue's JiraConnection
-            for jira_project in StaticSystems.jira_manager.get_jira_connection(issue.jira_connection_name).cached_projects:
+            for jira_project in jira_manager.get_jira_connection(issue.jira_connection_name).cached_projects:
                 if jira_project.owns_issue(issue):
                     custom_field = jira_project.translate_custom_field(field)
                     if custom_field not in issue:
@@ -146,7 +147,7 @@ class JiraUtils:
         """
         # TODO: Remove this now that we're 100% offline
         # dict of project to issues
-        results = {}
+        results = {}  # type: Dict['JiraProject', List[JiraIssue]]
         for i in issues:
             project = i.issue_key.split('-')[0]
             if project not in results:
@@ -174,3 +175,11 @@ class JiraUtils:
         if key not in cls._cached_jira_issues:
             return None
         return cls._cached_jira_issues[key]
+
+    @staticmethod
+    def save_argus_data(items: List[JiraIssue], file_name: str) -> None:
+        if utils.unit_test:
+            file_name = os.path.join('tests', file_name)
+        with open(file_name, 'wb') as cf:
+            for item in items:
+                item.serialize(cf)

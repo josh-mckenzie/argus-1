@@ -19,8 +19,8 @@ from dateutil import parser
 
 from src.jira_issue import JiraIssue
 from src.member_issues_by_status import MemberIssuesByStatus
-from src.utils import get_input, pause
-from typing import List
+from src.utils import get_input
+from typing import Dict, List, Set
 
 
 class ReportType:
@@ -67,13 +67,12 @@ class ReportFilter:
         # We store issues in a manner reflecting of their final visualization. For example, if we want to see 'closed'
         # tickets, we have self.columns['Closed'] defined and self.issues['Closed'] defined. This allows us to arbitrarily
         # define groupings and customize only their logic on child-classes of ReportFilter.
-        self.columns = []
+        self.columns = []  # type: List[str]
 
-        # Dict[str:List[JiraIssue]]
-        self.issues = {}
+        self.issues = {}  # type: Dict[str, List[JiraIssue]]
 
-        # set(str) -> JiraIssue keys, used to determine if report contains issue in question
-        self.known_issues = set()
+        # JiraIssue keys, used to determine if report contains issue in question
+        self.known_issues = set()  # type: Set[str]
 
         # Many reports are time-bound, so we store this here for convenience rather than replicating it in each child class
         # This should be stored as a datetime object
@@ -84,7 +83,7 @@ class ReportFilter:
             self.issues[column] = []
         self.known_issues = set()
 
-    def column_headers(self) -> List[str]:
+    def column_headers(self) -> str:
         # 4 pad to cover #'s for detail breakdown
         result = '{:<{width}.{width}} '.format('Name', width=self.name_width)
         for column in self.columns:

@@ -11,13 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional, Set
 
 from src.utils import print_separator
-
-if TYPE_CHECKING:
-    from src.jira_manager import JiraManager
 
 
 class JiraDependency:
@@ -26,7 +22,7 @@ class JiraDependency:
     """
 
     # Track dependencies we run across in tickets that are unknown in order to later prompt to add them to conf
-    unknown_dependencies = set()
+    unknown_dependencies = set()  # type: Set[str]
 
     dep_map = {
         'Automated By:inward': 'automates',

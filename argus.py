@@ -21,7 +21,9 @@ import sys
 from getpass import getpass
 
 from src import utils
+from src.jira_manager import JiraManager
 from src.main_menu import MainMenu
+from src.team_manager import TeamManager
 from src.utils import DESCRIPTION, Config, init_tab_completer
 
 init_tab_completer()
@@ -39,6 +41,7 @@ parser.add_option('-u', '--unit_test', help='Unit testing mode, does not connect
 parser.add_option('-v', '--verbose', help='Log verbose debug output to console and argus.log', action='store_true', dest='verbose')
 parser.add_option('-x', '--experiment', help='Run a specific dev experiment (JiraManager.run_debug())', action='store_true', dest='Debug')
 parser.add_option('-w', '--web_server', help='Run in WebServer mode', action='store_true', dest='web_server')
+parser.add_option('-i', '--interactive', help='Default mode: run interactive console menu', action='store_True', dest='interactive')
 
 optvalues = optparse.Values()
 (options, arguments) = parser.parse_args(sys.argv[1:], values=optvalues)
@@ -60,10 +63,14 @@ else:
 while Config.MenuPass == '':
     Config.MenuPass = getpass(msg)
 
+# Init logic / containers to pass to menu or to web server
+team_manager = TeamManager()
+jira_manager = JiraManager(team_manager)
+
 # TODO: Flip between web server mode and interactive
 if hasattr(options, 'web_server'):
     print('Web server not implemented yet.')
 else:
-    menu = MainMenu(option_dict)
+    menu = MainMenu(jira_manager, team_manager, option_dict)
     signal.signal(signal.SIGINT, menu.signal_handler)
     menu.display()

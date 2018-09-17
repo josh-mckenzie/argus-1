@@ -42,5 +42,11 @@ echo "-----------------------------" >> argus_health.txt
 $pycmd -m pylint --disable=all --enable=E,F --disable=E0602,E1121 argus.py >> argus_health.txt 2>&1
 $pycmd -m pylint --disable=all --enable=E,F --disable=E0602,E1121 src/ >> argus_health.txt 2>&1
 
+echo "$pycmd -m mypy --ignore-missing-imports"
+echo "-----------------------------" >> argus_health.txt
+echo "Running mypy with pycmd: $pycmd" >> argus_health.txt
+echo "-----------------------------" >> argus_health.txt
+$pycmd -m mypy --ignore-missing-imports argus.py >> argus_health.txt 2>&1
+
 echo 'results written to argus_health.txt. Opening with less.'
 less argus_health.txt

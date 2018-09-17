@@ -45,6 +45,9 @@ class JiraManager:
         """
         Recreates any JiraConnections and JiraViews based on saved data in conf/jira.cfg
         """
+
+        self.team_manager = team_manager
+
         # Holds connected Jira objects to be queried by JiraViews
         self._jira_connections = {}  # type: Dict[str, JiraConnection]
 
@@ -86,7 +89,7 @@ class JiraManager:
 
             for name in view_names:
                 try:
-                    jv = JiraView.from_file(self, name, team_manager)
+                    jv = JiraView.from_file(self, name, self.team_manager)
                     self.jira_views[jv.name] = jv
                 except ConfigError as ce:
                     print('ConfigError with jira view {}: {}'.format(name, ce))
@@ -263,7 +266,7 @@ class JiraManager:
         view_name = pick_value('Which view?', list(self.jira_views.keys()), True, 'Back')
         if view_name is None:
             return
-        self.jira_views[view_name].display_view()
+        self.jira_views[view_name].display_view(self)
         self._save_config()
 
     def add_view(self) -> None:
@@ -278,10 +281,10 @@ class JiraManager:
             return
         new_view = JiraView(view_name, self._jira_connections[jira_connection_name])
         self.jira_views[view_name] = new_view
-        new_view.edit_view()
+        new_view.edit_view(self.team_manager, self.team_manager)
         self._save_config()
 
-    def edit_view(self) -> None:
+    def edit_view(self)-> None:
         if len(self.jira_views) == 0:
             if is_yes('No views to edit. Would you like to add a view?'):
                 self.add_view()
@@ -291,7 +294,7 @@ class JiraManager:
         if view_name is None:
             return
         view = self.jira_views[view_name]
-        view.edit_view()
+        view.edit_view(self.team_manager)
         if view.is_empty():
             print('Jira View is empty. Remove it?')
             conf = get_input('Jira View is empty. Remove it? (q to cancel):')
@@ -570,7 +573,7 @@ class JiraManager:
         new_view.add_raw_filter(jira_filter)
         new_view.add_raw_filter(res_jf)
         self._save_config()
-        new_view.display_view()
+        new_view.display_view(self)
         print('Creating new view with label(s): {}'.format(','.join(jira_filter._includes)))
 
     def report_fix_version(self) -> None:
