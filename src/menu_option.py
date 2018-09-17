@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 
 class MenuOption:
@@ -20,10 +20,7 @@ class MenuOption:
     Contains a string representing a member and a method delegate to call on invocation
     """
 
-    entry_name = None
-    entry_method = None
-
-    def __init__(self, hotkey: Optional[str], name: Optional[str], method: Optional[function], pause: bool = True) -> None:
+    def __init__(self, hotkey: Optional[str], name: Optional[str], method: Optional[Callable], pause: bool = True) -> None:
         """
         :param hotkey: The key that the user will use to select this option.
         :param name: The name of the option that will be printed to the menu.
@@ -35,7 +32,7 @@ class MenuOption:
         """
         self.hotkey = hotkey
         self.entry_name = name
-        self.entry_method = method
+        self.entry_method = method  # type: Optional[Callable]
         self.needs_pause = pause
 
     @staticmethod

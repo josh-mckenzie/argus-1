@@ -57,6 +57,9 @@ class JiraDashboard:
         view_name_options.remove(view_name)
 
         view_name = pick_value('Second view?', view_name_options, False)
+        # make mypy happy - doesn't realize False means we can't have None
+        if view_name is None:
+            return None
         dash_views[view_name] = jira_views[view_name]
         view_name_options.remove(view_name)
 

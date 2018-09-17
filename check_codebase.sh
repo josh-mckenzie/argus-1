@@ -46,7 +46,6 @@ echo "$pycmd -m mypy --ignore-missing-imports"
 echo "-----------------------------" >> argus_health.txt
 echo "Running mypy with pycmd: $pycmd" >> argus_health.txt
 echo "-----------------------------" >> argus_health.txt
-$pycmd -m mypy --ignore-missing-imports argus.py >> argus_health.txt 2>&1
+$pycmd -m mypy --ignore-missing-imports --strict-optional argus.py >> argus_health.txt 2>&1
 
-echo 'results written to argus_health.txt. Opening with less.'
-less argus_health.txt
+echo 'results written to argus_health.txt'

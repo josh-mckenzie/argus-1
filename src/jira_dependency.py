@@ -11,9 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List, Optional, Set
+from typing import List, Optional, Set, TYPE_CHECKING
 
 from src.utils import print_separator
+
+if TYPE_CHECKING:
+    from src.jira_manager import JiraManager
 
 
 class JiraDependency:
@@ -145,8 +148,10 @@ class JiraDependency:
     def __str__(self) -> str:
         return 'IssueKey: {}. Type: {}. Direction: {}'.format(self.target_issue_key, self.type, self.direction)
 
-    def __eq__(self, other: 'JiraDependency') -> bool:
-        return self.target.issue_key == other.target.issue_key and self.type == other.type and self.direction == other.direction
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, JiraDependency):
+            return self.target.issue_key == other.target.issue_key and self.type == other.type and self.direction == other.direction
+        return False
 
     def __hash__(self) -> int:
         return hash((self.target_issue_key, self.type, self.direction))

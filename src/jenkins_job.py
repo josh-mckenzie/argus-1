@@ -19,13 +19,10 @@ This module does not interact with the Jenkins server at all. All data needs to 
 from the server prior to creating a new JenkinsJob object.
 """
 import pickle
-from typing import TYPE_CHECKING
+from typing import Dict, List, Tuple, TYPE_CHECKING
 
+from src.jenkins_interface import JenkinsBuild
 from src.utils import get_build_options
-
-if TYPE_CHECKING:
-    from typing import Dict, List, Tuple
-    from src.jenkins_interface import JenkinsBuild
 
 
 class JenkinsJob:

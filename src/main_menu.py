@@ -16,7 +16,7 @@ import configparser
 import os
 import sys
 from getpass import getpass
-from typing import Dict
+from typing import Dict, List
 
 from src import __version__, utils
 from src.jira_manager import JiraManager
@@ -199,8 +199,8 @@ class MainMenu:
             MenuOption.return_to_previous_menu(self.go_to_main_menu)
         ]
 
-        self.active_menu = None
-        self.menu_header = None
+        self.active_menu = self.main_menu  # type: List[MenuOption]
+        self.menu_header = 'uninit'  # type: str
         self.go_to_main_menu()
 
         self._load_config()
@@ -285,7 +285,8 @@ class MainMenu:
             # brute force ftw.
             for menu_option in self.active_menu:
                 if c_input == menu_option.hotkey:
-                    menu_option.entry_method()
+                    if menu_option.entry_method is not None:
+                        menu_option.entry_method()
                     if menu_option.needs_pause:
                         pause()
 
@@ -362,8 +363,8 @@ class MainMenu:
         config_parser = configparser.RawConfigParser()
         config_parser.add_section('Argus')
         config_parser.set('Argus', 'Browser', Config.Browser)
-        config_parser.set('Argus', 'Show_Dependencies', utils.show_dependencies)
-        config_parser.set('Argus', 'Show_Only_Open_Dependencies', utils.show_only_open_dependencies)
+        config_parser.set('Argus', 'Show_Dependencies', str(utils.show_dependencies))
+        config_parser.set('Argus', 'Show_Only_Open_Dependencies', str(utils.show_only_open_dependencies))
         conf = os.path.join(conf_dir, 'argus.cfg')
         save_argus_config(config_parser, conf)
 
@@ -373,9 +374,9 @@ class MainMenu:
             config_parser.read(argus_conf_file)
             Config.Browser = config_parser.get('Argus', 'Browser')
             if config_parser.has_option('Argus', 'Show_Dependencies'):
-                utils.show_dependencies = config_parser.get('Argus', 'Show_Dependencies')
+                utils.show_dependencies = bool(config_parser.get('Argus', 'Show_Dependencies'))
             if config_parser.has_option('Argus', 'Show_Only_Open_Dependencies'):
-                utils.show_only_open_dependencies = config_parser.get('Argus', 'Show_Only_Open_Dependencies')
+                utils.show_only_open_dependencies = bool(config_parser.get('Argus', 'Show_Only_Open_Dependencies'))
         else:
             # if we don't yet have a config file, go ahead and create one on this first pass w/default values
             self._save_config()

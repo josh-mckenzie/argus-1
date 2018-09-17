@@ -28,7 +28,7 @@ from src.utils import DESCRIPTION, Config, init_tab_completer
 
 init_tab_completer()
 
-parser = optparse.OptionParser(description=DESCRIPTION, usage='Usage: %prog [options] [host [port]]', version='argus ' + optparse.__version__)
+parser = optparse.OptionParser(description=DESCRIPTION, usage='Usage: %prog [options] [host [port]]', version='argus .3')
 parser.add_option('-p', '--password', help='provide local password on command-line rather than being prompted')
 parser.add_option('-d', '--dashboard', help='name of dashboard to auto-execute into')
 parser.add_option('-j', '--jenkins_report', help='TODO:#106 execute and print a jenkins report, exiting upon completion', default=False, action='store_true')
@@ -41,7 +41,7 @@ parser.add_option('-u', '--unit_test', help='Unit testing mode, does not connect
 parser.add_option('-v', '--verbose', help='Log verbose debug output to console and argus.log', action='store_true', dest='verbose')
 parser.add_option('-x', '--experiment', help='Run a specific dev experiment (JiraManager.run_debug())', action='store_true', dest='Debug')
 parser.add_option('-w', '--web_server', help='Run in WebServer mode', action='store_true', dest='web_server')
-parser.add_option('-i', '--interactive', help='Default mode: run interactive console menu', action='store_True', dest='interactive')
+parser.add_option('-i', '--interactive', help='Default mode: run interactive console menu', action='store_true', dest='interactive')
 
 optvalues = optparse.Values()
 (options, arguments) = parser.parse_args(sys.argv[1:], values=optvalues)
@@ -54,14 +54,11 @@ if hasattr(options, 'verbose'):
 Config.init_argus()
 
 # determine if this is a first run, prompt differently pending that
-msg = None
 if hasattr(options, 'password'):
     Config.MenuPass = options.password
 else:
-    msg = 'Enter Argus Password (local JIRA credentials will be encrypted with this):'
-
-while Config.MenuPass == '':
-    Config.MenuPass = getpass(msg)
+    while Config.MenuPass == '':
+        Config.MenuPass = getpass('Enter Argus Password (local JIRA credentials will be encrypted with this):')
 
 # Init logic / containers to pass to menu or to web server
 team_manager = TeamManager()

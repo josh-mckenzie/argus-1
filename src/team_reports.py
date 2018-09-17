@@ -20,7 +20,7 @@ from dateutil import parser
 from src.jira_issue import JiraIssue
 from src.member_issues_by_status import MemberIssuesByStatus
 from src.utils import get_input
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 
 class ReportType:
@@ -76,7 +76,7 @@ class ReportFilter:
 
         # Many reports are time-bound, so we store this here for convenience rather than replicating it in each child class
         # This should be stored as a datetime object
-        self.since = None
+        self.since = None  # type: Optional[datetime.datetime]
 
     def clear(self) -> None:
         for column in self.columns:
@@ -90,7 +90,7 @@ class ReportFilter:
             result += '{:<{width}.{width}}'.format(column, width=self.col_width)
         return result
 
-    def process_issues(self, member_issues: 'MemberIssuesByStatus') -> None:
+    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
         raise NotImplementedError()
 
     def matches(self, jira_issue: JiraIssue) -> bool:
@@ -322,7 +322,7 @@ class ReportFixVersion(ReportFilter):
         ReportFilter.__init__(self)
         self.columns = ['Assigned', 'Closed non-test', 'Reviewed', 'Closed Test', 'Total']
         self.issues = {'Assigned': [], 'Closed non-test': [], 'Reviewed': [], 'Closed Test': [], 'Total': []}
-        self._fix_version = None
+        self._fix_version = None  # type: Optional[str]
 
     def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
         assert member_issues is not None, 'process_issues call on a null MemberIssuesByStatus object.'

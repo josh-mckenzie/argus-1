@@ -17,13 +17,13 @@ import sys
 import time
 from configparser import RawConfigParser
 from getpass import getpass
-from typing import TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from jenkinsapi import custom_exceptions
 from jenkinsapi.jenkins import Jenkins
 from requests.exceptions import HTTPError
 from src.jenkins_interface import download_builds
-from src.jenkins_job import JenkinsJob
+from src.jenkins_job import JenkinsJob, JenkinsTest
 from src.jenkins_view import JenkinsView
 from src.utils import (ConfigError, MultiTasker, build_config_file,
                        build_jenkins_data_file, clear, decode, encode,
@@ -32,8 +32,7 @@ from src.utils import (ConfigError, MultiTasker, build_config_file,
                        save_argus_config)
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional
-    from src.jenkins_job import JenkinsTest
+    from src.jenkins_manager import JenkinsManager
 
 
 class JenkinsConnection:

@@ -1,7 +1,7 @@
 import configparser
 import os
 import traceback
-from typing import List, Dict
+from typing import TYPE_CHECKING, Dict, List
 
 from jira import JIRAError
 
@@ -14,6 +14,10 @@ from src.jira_utils import JiraUtils
 from src.team_manager import TeamManager
 from src.utils import (ConfigError, argus_debug, get_input, pick_value,
                        print_separator, save_argus_config, jira_view_dir, pause)
+
+if TYPE_CHECKING:
+    from src.jira_manager import JiraManager
+    from src.team import Team
 
 
 class JiraView:
@@ -44,20 +48,20 @@ class JiraView:
 
         self.display_filter = DisplayFilter()
 
-    def add_single_filter(self, name: str, value: str, filter_type: str, and_or: str) -> None:
+    def add_single_filter(self, field: str, value: str, filter_type: str, and_or: str) -> None:
         """
-        :param name: field name
+        :param field: field name
         :param value: value to match against
         :param filter_type: 'i' to include, else exclude
         :param and_or: 'AND' or 'OR'
         """
         assert and_or == 'AND' or and_or == 'OR', 'Expected AND or OR to add_single_filter. Got: {}'.format(and_or)
-        if name not in self._jira_filters:
-            self._jira_filters[name] = JiraFilter(name, self.jira_connection, and_or)
+        if field not in self._jira_filters:
+            self._jira_filters[field] = JiraFilter(field, self.jira_connection, and_or)
 
-        # don't add logic to confirm validity or overlap, just add it
-        jira_filter = self._jira_filters[name]
-        jira_filter.name = name
+        # Overwrite fields if it already exists.
+        jira_filter = self._jira_filters[field]
+        jira_filter.field = field
         if filter_type == 'i':
             jira_filter.include(value)
         else:

@@ -19,6 +19,7 @@ import traceback
 from typing import TYPE_CHECKING, List, Optional, Dict
 
 import requests
+from jira import Project
 from jira.client import JIRAError, JIRA
 from requests.auth import HTTPBasicAuth
 
@@ -29,6 +30,9 @@ from src.test_wrapped_jira_connection_stub import TestWrappedJiraConnectionStub
 from src.utils import (ConfigError, clear, decode, encode,
                        encode_password, get_input, pick_value,
                        save_argus_config, jira_connection_dir)
+
+if TYPE_CHECKING:
+    from src.jira_manager import JiraManager
 
 
 class JiraConnection:
@@ -211,7 +215,7 @@ class JiraConnection:
     def _refresh_project_names(self) -> None:
         # Cache project names locally within this object
         print('Querying project names from {}'.format(self.connection_name))
-        projects = []
+        projects = []  # type: List[Project]
         if self._wrapped_jira_connection is not None:
             projects = self._wrapped_jira_connection.projects()
         self.possible_projects = []
@@ -274,7 +278,7 @@ class JiraConnection:
         for cached_data in list(self._cached_jira_projects.values()):
             cached_data.delete_on_disk_files()
 
-    def delete_owned_views(self, jira_manager: JiraManager) -> None:
+    def delete_owned_views(self, jira_manager: 'JiraManager') -> None:
         to_remove = []
         for jira_view in list(jira_manager.jira_views.values()):
             if jira_view.owned_by(self):

@@ -18,7 +18,7 @@ import os
 import traceback
 
 from jira import JIRAError
-from typing import Dict, Optional, List
+from typing import TYPE_CHECKING, Dict, Optional, List, Tuple
 
 from src.display_filter import DisplayFilter
 from src.jira_connection import JiraConnection
@@ -31,6 +31,9 @@ from src.jira_view import JiraView
 from src.utils import (ConfigError, argus_debug, clear, get_input, is_empty,
                        is_yes, jira_conf_file, pause, pick_value, print_separator,
                        save_argus_config, jira_project_dir)
+
+if TYPE_CHECKING:
+    from src.team_manager import TeamManager
 
 
 class JiraManager:
@@ -65,7 +68,7 @@ class JiraManager:
             config_parser = configparser.RawConfigParser()
             config_parser.read(jira_conf_file)
 
-            connection_names = []
+            connection_names = []  # type: List[str]
             if config_parser.has_section('JiraManager') and config_parser.has_option('JiraManager', 'Connections'):
                 connection_names = config_parser.get('JiraManager', 'Connections').split(',')
 
@@ -83,7 +86,7 @@ class JiraManager:
                     print('ConfigError with project {}: {}'.format(connection_name, ce))
 
             # Construct JiraViews so they can be used during JiraDashboard creation.
-            view_names = []
+            view_names = []  # type: List[str]
             if config_parser.has_option('JiraManager', 'Views'):
                 view_names = config_parser.get('JiraManager', 'Views').split(',')
 
@@ -121,6 +124,9 @@ class JiraManager:
                     if add == 'y':
                         new_jira_connection = self.add_connection(
                             'Name the connection (reference url: {}):'.format(new_jira_project.url))
+                        if new_jira_connection is None:
+                            print('Error during connection add. Cannot link and use JiraProject.')
+                            continue
                         new_jira_connection.save_config()
                         new_jira_project.jira_connection = new_jira_connection
                     else:
@@ -174,12 +180,15 @@ class JiraManager:
                         print('   {}: {}'.format(jira_connection.connection_name, jira_connection.url))
                     if is_yes('Would you like to add one now?'):
                         parent_jira_connection = self.add_connection('Name the connection (reference url: {}):'.format(url))
+                        if parent_jira_connection is None:
+                            print('Ran into error adding parent connection. Skipping.')
                     else:
                         print('JiraProject data and config will not be added nor cached. Either add it manually or restart Argus and reply y')
                         break
 
                 new_jira_project = JiraProject(parent_jira_connection, project_name, url, custom_fields)
-                parent_jira_connection.add_and_link_jira_project(new_jira_project)
+                if parent_jira_connection is not None:
+                    parent_jira_connection.add_and_link_jira_project(new_jira_project)
         print('Resolving dependencies between JiraIssues')
         self._resolve_issue_dependencies()
         print('JiraManager initialization complete.')
@@ -281,7 +290,7 @@ class JiraManager:
             return
         new_view = JiraView(view_name, self._jira_connections[jira_connection_name])
         self.jira_views[view_name] = new_view
-        new_view.edit_view(self.team_manager, self.team_manager)
+        new_view.edit_view(self, self.team_manager)
         self._save_config()
 
     def edit_view(self)-> None:
@@ -294,7 +303,7 @@ class JiraManager:
         if view_name is None:
             return
         view = self.jira_views[view_name]
-        view.edit_view(self.team_manager)
+        view.edit_view(self, self.team_manager)
         if view.is_empty():
             print('Jira View is empty. Remove it?')
             conf = get_input('Jira View is empty. Remove it? (q to cancel):')
@@ -374,6 +383,8 @@ class JiraManager:
     def display_escalations(self) -> None:
         jira_connection_name = pick_value('Select a JIRA Connection to view Escalation type tickets:',
                                           list(self._jira_connections.keys()))
+        if jira_connection_name is None:
+            return
         jira_connection = self._jira_connections[jira_connection_name]
         jira_issues = JiraUtils.get_issues_by_query(jira_connection,
                                                     'type = \'Escalation\' AND resolution = unresolved')
@@ -489,6 +500,8 @@ class JiraManager:
     def list_projects(self) -> None:
         jira_projects = self.get_all_cached_jira_projects()
         for project in list(jira_projects.values()):
+            if project.jira_connection is None:
+                continue
             print(' (Conn:{conn} Name:{name}). Issue count: {count}. Updated: {updated}'.format(
                 conn=project.jira_connection.connection_name,
                 name=project.project_name,
@@ -504,10 +517,12 @@ class JiraManager:
         add_new = 'Add a new Jira Connection'
         options.append(add_new)
 
-        pairs = []
+        pairs = []  # type: List[Tuple[Optional[JiraConnection], str]]
         while True:
             print('Current contents of report]')
             for jira_connection, user in pairs:
+                if jira_connection is None:
+                    continue
                 print('   Connection: {} User: {}'.format(jira_connection.connection_name, user))
 
             command = pick_value('[Connection inclusion]', options, True, 'Done', False)
@@ -515,14 +530,19 @@ class JiraManager:
                 break
             elif command == add_new:
                 new_conn = self.add_connection()
+                if new_conn is None:
+                    return
             else:
                 new_conn = self._jira_connections[command]
 
             print('Selecting user name from {}'.format(new_conn.connection_name))
-            user = new_conn.pick_single_assignee()
-            if user is None:
-                break
-            pairs.append((new_conn, user))
+            # Make mypy happy...
+            if new_conn is None:
+                return
+            picked = new_conn.pick_single_assignee()
+            if picked is None:
+                return
+            pairs.append((new_conn, picked))
         # Any error in the user addition process can bubble up with only 1 user selected
         if len(pairs) <= 1:
             print('Found less than the required minimum of 2 entries. Not adding report.')
@@ -535,13 +555,15 @@ class JiraManager:
 
         # Create a JiraView for each of these and then dump them into the dashboard
         for jira_connection, user in pairs:
+            # Make mypy happy...
+            if jira_connection is None:
+                continue
             view_name = '{}_{}'.format(jira_connection.connection_name, user)
             if view_name in list(self.jira_views.keys()):
                 print('Already found a view named {} in jira_views. Using that instead.'.format(view_name))
                 new_jira_view = self.jira_views[view_name]
             else:
                 new_jira_view = JiraView('{}_{}'.format(jira_connection.connection_name, user), jira_connection)
-
                 new_jira_view.add_single_filter('assignee', user, 'i', 'OR')
                 new_jira_view.add_single_filter('reviewer', user, 'i', 'OR')
                 new_jira_view.add_single_filter('reviewer2', user, 'i', 'OR')
@@ -556,6 +578,8 @@ class JiraManager:
     def add_label_view(self) -> None:
         name = get_input('Name this view: ')
         jira_connection_name = pick_value('Which JIRA Connection does this belong to? ', list(self._jira_connections.keys()))
+        if jira_connection_name is None:
+            return
         jira_connection = self._jira_connections[jira_connection_name]
         new_view = JiraView(name, jira_connection)
         self.jira_views[name] = new_view

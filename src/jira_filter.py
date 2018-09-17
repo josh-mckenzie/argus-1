@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TYPE_CHECKING, Optional
+from configparser import RawConfigParser
+from typing import TYPE_CHECKING, List, Optional
 
 from src.utils import argus_debug, get_input, pick_value
 
 if TYPE_CHECKING:
-    from configparser import RawConfigParser
     from src.jira_connection import JiraConnection
     from src.jira_manager import JiraManager
     from src.jira_issue import JiraIssue
-    from typing import List
 
 
 class JiraFilter:
@@ -39,11 +38,11 @@ class JiraFilter:
 
     def __init__(self,
                  field: str,
-                 jira_connection: JiraConnection,
+                 jira_connection: 'JiraConnection',
                  query_type: str = 'AND',
                  includes: Optional[List[str]] = None,
                  excludes: Optional[List[str]] = None) -> None:
-        self._field = field
+        self.field = field
         self._jira_connection = jira_connection
 
         self._query_type = query_type
@@ -55,14 +54,14 @@ class JiraFilter:
     def include(self, value: str) -> None:
         # Special case. Use 'None' field as Unresolved in JIRA
         # NOTE: Upon addition of a 2nd mapping such as this, consider refactoring to a local Dict[str:str] of mappings
-        if self._field == 'resolution' and value.lower() == 'unresolved':
+        if self.field == 'resolution' and value.lower() == 'unresolved':
             self._includes.append('None')
         else:
             self._includes.append(value)
 
     def exclude(self, value: str) -> None:
         #   Special case. Use 'None' field as Unresolved in JIRA
-        if self._field == 'resolution' and value == 'unresolved':
+        if self.field == 'resolution' and value == 'unresolved':
             self._excludes.append('None')
         else:
             self._excludes.append(value)
@@ -93,7 +92,7 @@ class JiraFilter:
     def query_type(self) -> str:
         return self._query_type
 
-    def _translate_field(self, jira_issue: JiraIssue) -> str:
+    def _translate_field(self, jira_issue: 'JiraIssue') -> str:
         """
         For this issue, parse out the JiraProject it belongs to and translate our local field's readable text to
         whatever cf* is on the project side
@@ -102,10 +101,10 @@ class JiraFilter:
         if jira_project is None:
             return 'None'
         argus_debug('JiraFilter: Attempting to translate {} for jira_issue: {}'.format(
-            self._field, jira_issue.issue_key))
-        return jira_project.translate_custom_field(self._field)
+            self.field, jira_issue.issue_key))
+        return jira_project.translate_custom_field(self.field)
 
-    def _internal_matching_operation(self, jira_issue: JiraIssue, to_match: List[str]) -> bool:
+    def _internal_matching_operation(self, jira_issue: 'JiraIssue', to_match: List[str]) -> bool:
         matches_one = False
         matches_all = True
 
@@ -132,13 +131,13 @@ class JiraFilter:
 
         return matches_one and matches_all
 
-    def includes_jira_issue(self, jira_issue: JiraIssue) -> bool:
+    def includes_jira_issue(self, jira_issue: 'JiraIssue') -> bool:
         return self._internal_matching_operation(jira_issue, self._includes)
 
-    def excludes_jira_issue(self, jira_issue: JiraIssue) -> bool:
+    def excludes_jira_issue(self, jira_issue: 'JiraIssue') -> bool:
         return self._internal_matching_operation(jira_issue, self._excludes)
 
-    def extract_value(self, jira_issue: JiraIssue) -> str:
+    def extract_value(self, jira_issue: 'JiraIssue') -> str:
         translated = self._translate_field(jira_issue)
         if translated not in jira_issue:
             return 'N/A'
@@ -146,13 +145,13 @@ class JiraFilter:
 
     @property
     def field_name(self) -> str:
-        return self._field
+        return self.field
 
     def set_field_name(self, value: str) -> None:
-        self._field = value
+        self.field = value
 
     @classmethod
-    def from_file(cls, jira_manager: JiraManager, filter_field: str, config_parser: RawConfigParser) -> 'JiraFilter':
+    def from_file(cls, jira_manager: 'JiraManager', filter_field: str, config_parser: RawConfigParser) -> 'JiraFilter':
         jira_connection_name = config_parser.get(filter_field, 'jira_connection')
         jira_connection = jira_manager.get_jira_connection(jira_connection_name)
         result = JiraFilter(filter_field, jira_connection)
@@ -175,14 +174,14 @@ class JiraFilter:
         return result
 
     def save_config(self, config_parser: RawConfigParser) -> None:
-        config_parser.add_section(self._field)
-        config_parser.set(self._field, 'name', self._field)
-        config_parser.set(self._field, 'jira_connection', self._jira_connection.connection_name)
-        config_parser.set(self._field, 'query_type', self._query_type)
+        config_parser.add_section(self.field)
+        config_parser.set(self.field, 'name', self.field)
+        config_parser.set(self.field, 'jira_connection', self._jira_connection.connection_name)
+        config_parser.set(self.field, 'query_type', self._query_type)
         if len(self._includes) > 0:
-            config_parser.set(self._field, 'inclusions', ','.join(self._includes))
+            config_parser.set(self.field, 'inclusions', ','.join(self._includes))
         if len(self._excludes) > 0:
-            config_parser.set(self._field, 'exclusions', ','.join(self._excludes))
+            config_parser.set(self.field, 'exclusions', ','.join(self._excludes))
 
     def __str__(self) -> str:
-        return 'name: {} type: {} _includes: {} _excludes: {}'.format(self._field, self._query_type, ','.join(self._includes), ','.join(self._excludes))
+        return 'name: {} type: {} _includes: {} _excludes: {}'.format(self.field, self._query_type, ','.join(self._includes), ','.join(self._excludes))

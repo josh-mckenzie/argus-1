@@ -23,6 +23,8 @@ from src.utils import browser, ConfigError
 
 if TYPE_CHECKING:
     from src.jira_connection import JiraConnection
+    from src.jira_manager import JiraManager
+    from src.jira_project import JiraProject
 
 
 class JiraUtils:
@@ -147,12 +149,12 @@ class JiraUtils:
         """
         # TODO: Remove this now that we're 100% offline
         # dict of project to issues
-        results = {}  # type: Dict['JiraProject', List[JiraIssue]]
+        results = {}  # type: Dict[str, List[JiraIssue]]
         for i in issues:
-            project = i.issue_key.split('-')[0]
-            if project not in results:
-                results[project] = []
-            results[project].append(i)
+            project_name = i.issue_key.split('-')[0]
+            if project_name not in results:
+                results[project_name] = []
+            results[project_name].append(i)
 
         # Now, we simply sort each sub-array based on integer repr. of keys
         for p in results:

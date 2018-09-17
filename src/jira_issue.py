@@ -26,6 +26,7 @@ from src.utils import ConfigError
 
 if TYPE_CHECKING:
     from src.jira_connection import JiraConnection
+    from src.jira_manager import JiraManager
     from src.jira_project import JiraProject
 
 
@@ -51,7 +52,7 @@ class JiraIssue(dict):
             self.jira_connection_name = jira_connection.connection_name
         else:
             self.jira_connection_name = 'None'
-        self.issue_key = issue.key
+        self.issue_key = issue.key  # type: str
         self.dependencies = set()  # type: Set[JiraDependency]
         self.version = 1
 

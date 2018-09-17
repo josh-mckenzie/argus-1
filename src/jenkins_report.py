@@ -15,14 +15,14 @@
 import os
 from configparser import RawConfigParser
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 
 from src.jenkins_job import JenkinsJob
 from src.utils import (clear, get_build_options, jenkins_reports_dir,
                        save_argus_config)
 
 if TYPE_CHECKING:
-    from typing import List
+    from src.jenkins_manager import JenkinsManager
 
 
 class JenkinsReport:
@@ -101,9 +101,9 @@ class JenkinsReport:
 
     def get_job_list(self, jenkins_manager: 'JenkinsManager') -> List[JenkinsJob]:
         job_list = []
-        for job_name, connection_name in self.job_dict.items():
+        for job, connection_name in self.job_dict.items():
             connection = jenkins_manager.get_connection(connection_name)
-            job = connection.jenkins_jobs[job_name]
+            job = connection.jenkins_jobs[job.name]
             job_list.append(job)
         return job_list
 

@@ -15,14 +15,11 @@
 """
 Contains all calls to the Jenkins server.
 """
+from jenkinsapi.build import Build
 from jenkinsapi.jenkins import Jenkins
-from typing import TYPE_CHECKING
+from typing import List
 
 from src.utils import get_build_options
-
-if TYPE_CHECKING:
-    from jenkinsapi.build import Build
-    from typing import List
 
 
 def download_builds(jenkins_obj: Jenkins, job_name: str) -> List['JenkinsBuild']:

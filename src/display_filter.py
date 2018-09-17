@@ -14,12 +14,15 @@
 
 import os
 import pydoc
-from typing import Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 from src import utils
 from src.jira_dependency import JiraDependency
 from src.jira_issue import JiraIssue
 from src.jira_utils import JiraUtils
+
+if TYPE_CHECKING:
+    from src.jira_manager import JiraManager
 
 
 class DisplayFilter:
@@ -239,7 +242,7 @@ class DisplayFilter:
                 # On non-matches, we don't return this row at all
                 if val is None and column.name in filters:
                     return ''
-                elif column in filters and filters[column] not in val:
+                elif column in filters and val is not None and filters[column] not in val:
                     return ''
 
             val = '' if val is None else val

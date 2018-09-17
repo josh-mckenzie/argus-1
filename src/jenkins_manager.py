@@ -18,18 +18,17 @@ from configparser import RawConfigParser
 from getpass import getpass
 
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from src.jenkins_connection import JenkinsConnection
 from src.jenkins_job import JenkinsJob, JenkinsTest
 from src.jenkins_report import JenkinsReport
-from src.main_menu import MainMenu
 from src.utils import (Config, ConfigError, display_results, get_connection_name, get_input, is_yes,
                        jenkins_conf_file, jenkins_data_dir, jenkins_views_dir,
                        pause, pick_value, save_argus_config)
 
 if TYPE_CHECKING:
-    from typing import Dict, List
+    from src.main_menu import MainMenu
 
 
 class JenkinsManager:
@@ -38,11 +37,11 @@ class JenkinsManager:
     Helper class to build Jenkins test reports
     """
 
-    def __init__(self, main_menu: MainMenu):
-        self._jenkins_branches = Config.JENKINS_BRANCHES
-        self._builds_to_check = 50
-        self._max_results = 20
-        self._main_menu = main_menu
+    def __init__(self, main_menu: 'MainMenu') -> None:
+        self._jenkins_branches = Config.JENKINS_BRANCHES  # type: List[str]
+        self._builds_to_check = 50  # type: int
+        self._max_results = 20  # type: int
+        self._main_menu = main_menu  # type: 'MainMenu'
 
         # Map of connection_names -> jenkins_connections
         self.jenkins_connections = {}  # type: Dict[str, JenkinsConnection]
@@ -51,10 +50,12 @@ class JenkinsManager:
         self.jenkins_reports = {}  # type: Dict[str, JenkinsReport]
 
         # Currently active Jenkins connection
-        self.active_connection = None  # type: JenkinsConnection
+        # TODO: Change this to key off name, decouple from menu interface
+        self.active_connection = JenkinsConnection('uninit', 'uninit')  # type: JenkinsConnection
 
         # Currently active Jenkins report
-        self.active_report = None  # type: JenkinsReport
+        # TODO: Change this to key off name, decouple from menu interface
+        self.active_report = JenkinsReport('uninit')  # type: JenkinsReport
 
         self.load_jenkins_config()
 
@@ -207,7 +208,10 @@ class JenkinsManager:
                         break
         else:
             if is_yes('No Jenkins connections to add jobs from. Would you like to add one now?'):
-                self.active_connection = self.add_connection()
+                added = self.add_connection()
+                if added is None:
+                    return
+                self.active_connection = added
                 self._main_menu.go_to_jenkins_connection_menu()
 
     def remove_custom_report_job(self) -> None:

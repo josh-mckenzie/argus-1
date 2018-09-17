@@ -24,7 +24,7 @@ import time
 from configparser import RawConfigParser
 from glob import glob
 from subprocess import Popen
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, TextIO, Tuple
 from urllib import request
 
 DESCRIPTION = 'argus, command-line JIRA multi-tool'
@@ -65,7 +65,7 @@ builds_to_check_str = 'builds_to_check'
 recent_str = 'recent_builds_to_check'
 
 debug = False
-argus_log = None
+argus_log = None  # type: Optional[TextIO]
 unit_test = False
 
 show_dependencies = False
@@ -399,7 +399,7 @@ def argus_debug(value: str) -> None:
         print('DEBUG: {}'.format(value))
         if argus_log is None:
             return
-        argus_log.write(value.encode('utf-8') + os.linesep)
+        argus_log.write(str(value.encode('utf-8')) + os.linesep)
 
 
 def load_file(tpl: Tuple[Any, Any, Any]) -> None:
@@ -482,7 +482,8 @@ def clear_tab_complete_vocabulary() -> None:
     presses tab.
     :return:
     """
-    def completer() -> None:
+    # Matching signature expected in set_completer according to mypy
+    def completer(arg1: str, arg2: int) -> Optional[str]:
         return None
     readline.set_completer(completer)
 

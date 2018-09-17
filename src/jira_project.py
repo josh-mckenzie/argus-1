@@ -15,7 +15,7 @@
 import configparser
 import os
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from src import utils
 from src.jira_issue import JiraIssue
@@ -51,7 +51,7 @@ class JiraProject:
         """
         if custom_fields is None:
             custom_fields = {}
-        self.jira_connection = jira_connection  # type: 'JiraConnection'
+        self.jira_connection = jira_connection  # type: Optional['JiraConnection']
         self.project_name = project_name
         self._custom_fields = custom_fields
         if url is not None:
@@ -226,6 +226,7 @@ class JiraProject:
         self.jira_connection = None
 
     def refresh(self) -> None:
+        assert self.jira_connection is not None
         new_issues = JiraUtils.get_issues_for_project(self.jira_connection, self.project_name, self.updated)
         if len(new_issues) > 0:
             print('Found {} updated/new issues for {}. Saving to disk.'.format(len(new_issues), self.project_name))
@@ -247,9 +248,11 @@ class JiraProject:
         self.jira_connection = jira_connection
 
     def config_file(self) -> str:
+        assert self.jira_connection is not None
         return os.path.join(jira_project_dir, '{}_{}.cfg'.format(self.jira_connection.connection_name, self.project_name))
 
     def _data_file(self) -> str:
+        assert self.jira_connection is not None
         return JiraProject.data_file(self.jira_connection.connection_name, self.project_name)
 
     @staticmethod
@@ -261,20 +264,22 @@ class JiraProject:
         :param search_type: 'a': all. 'o': open. 'c': closed
         """
         results = []
-        for k, v in self.jira_issues.items():
-            if v.matches(self.jira_connection, search_string):
-                if search_type == 'o' and v.is_open:
-                    results.append(v)
-                elif search_type == 'c' and v.is_closed:
-                    results.append(v)
-                elif search_type == 'a':
-                    results.append(v)
+        if self.jira_connection is not None:
+            for k, v in self.jira_issues.items():
+                if v.matches(self.jira_connection, search_string):
+                    if search_type == 'o' and v.is_open:
+                        results.append(v)
+                    elif search_type == 'c' and v.is_closed:
+                        results.append(v)
+                    elif search_type == 'a':
+                        results.append(v)
         return results
 
     def owns_issue(self, issue: JiraIssue) -> bool:
         """
         Determines whether JiraConnection for issue matches this project and project_name matches
         """
+        assert self.jira_connection is not None
         return issue.project_name == self.project_name and issue.jira_connection_name == self.jira_connection.connection_name
 
     def get_issue(self, issue_key: str) -> Optional[JiraIssue]:
