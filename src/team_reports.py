@@ -32,6 +32,7 @@ class ReportType:
     REVIEW_LOAD = 4
     FIXVERSION = 5
     META = 6
+    IN_PROGRESS = 7
 
     @classmethod
     def from_int(cls, value: int) -> int:
@@ -47,6 +48,8 @@ class ReportType:
             return ReportType.FIXVERSION
         elif value == 6:
             return ReportType.META
+        elif value == 7:
+            return ReportType.IN_PROGRESS
         else:
             return ReportType.UNKNOWN
 
@@ -169,6 +172,33 @@ class ReportFilter:
         print('Printing all keys for report: {}. Total count: {}'.format(self.header, len(self.issues)))
         for issue_key in self.issues:
             print('   Key: {}'.format(issue_key))
+
+
+class InProgressReport(ReportFilter):
+    header = 'In Progress'
+
+    def __init__(self) -> None:
+        ReportFilter.__init__(self)
+        self.columns = ['In Progress']
+        self.issues = {'In Progress': []}
+
+    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+        assert member_issues is not None, 'process_issues call on a null MemberIssuesByStatus object.'
+
+        self._add_matching_issues('In Progress', [x for x in member_issues.assigned if x.status == 'In Progress'])
+
+    def matches(self, jira_issue: JiraIssue) -> bool:
+        """
+        All filtering done in process_issues
+        """
+        return True
+
+    @property
+    def needs_duration(self) -> bool:
+        """
+        All filtering done in process_issues
+        """
+        return True
 
 
 class ReportMomentum(ReportFilter):

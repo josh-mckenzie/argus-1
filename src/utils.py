@@ -96,6 +96,8 @@ def clear() -> None:
 
 
 def encode_password() -> str:
+    if unit_test:
+        return 'unit_test'
     return Config.MenuPass
 
 
@@ -299,6 +301,7 @@ class Config:
     MenuPass = ''
     SkipUpdate = False
     Experiment = False
+    JiraLimit = 0
 
     @classmethod
     def init_argus(cls) -> None:

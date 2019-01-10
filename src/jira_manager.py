@@ -442,7 +442,7 @@ class JiraManager:
                     continue
 
                 if jira_project.jira_connection is not None:
-                    print('Ticket: {}'.format(ticket.pretty_print(jira_project.jira_connection)))
+                    print('Ticket: {}'.format(ticket.pretty_print()))
             elif menu_choice == 'r':
                 print('TEST: [{:{width}.{width}}]'.format('I am testing a 5.5 thing', width=5))
             elif menu_choice == 'l':
@@ -505,7 +505,7 @@ class JiraManager:
                 try:
                     jira_issue = display_list[int(cinput) - 1]
                     JiraUtils.open_issue_in_browser(
-                        self._jira_connections[jira_issue.jira_connection_name].url, jira_issue.issue_key)
+                        self._jira_connections[jira_issue.jira_connection.connection_name].url, jira_issue.issue_key)
                 except ValueError:
                     print('Bad input. Try again.')
             elif str.lower(cinput) == 'q':
@@ -707,6 +707,9 @@ class JiraManager:
                     JiraUtils.open_issue_in_browser(jira_conn.url, chosen_issue.issue_key)
             except ValueError:
                 print('Bad input. Try again.')
+
+    def add_single_user_report(self) -> None:
+        pass
 
     def _prompt_connection_add_if_none(self) -> bool:
         """
