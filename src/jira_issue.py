@@ -22,12 +22,11 @@ from jira import Issue
 from jira.resources import Version
 
 from src.jira_dependency import JiraDependency
-from src.utils import ConfigError, argus_debug
+from src.utils import ConfigError
 
 if TYPE_CHECKING:
     from src.jira_connection import JiraConnection
     from src.jira_manager import JiraManager
-    from src.jira_project import JiraProject
 
 
 class JiraIssue(dict):
@@ -333,12 +332,12 @@ class JiraIssue(dict):
         """
         return hash(self.issue_key)
 
-    def pretty_print(self) -> str:
+    def pretty_print(self, jira_connection: 'JiraConnection') -> str:
         result = 'key:{}'.format(self.issue_key)
         result += os.linesep + '   summary: {}'.format(self['summary'])
         result += os.linesep + '   assignee: {}'.format(self.assignee)
-        result += os.linesep + '   reviewer: {}'.format(self.reviewer)
-        result += os.linesep + '   reviewer2: {}'.format(self.get_value('reviewer2'))
+        result += os.linesep + '   reviewer: {}'.format(self.reviewer(jira_connection))
+        result += os.linesep + '   reviewer2: {}'.format(self.get_value(jira_connection, 'reviewer2'))
         result += os.linesep + '   status: {}'.format(self.status)
         result += os.linesep + '   priority: {}'.format(self.priority)
         return result

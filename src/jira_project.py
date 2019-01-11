@@ -100,10 +100,15 @@ class JiraProject:
         for key, issue in self.jira_issues.items():
             if issue.assignee is not None:
                 self._known_assignees.add(issue.assignee)
-            if issue.reviewer(self.jira_connection) is not None:
-                self._known_reviewers.add(issue.reviewer(self.jira_connection))
-            if issue.reviewer2(self.jira_connection) is not None:
-                self._known_reviewers.add(issue.reviewer2(self.jira_connection))
+            if self.jira_connection is not None:
+                if issue.reviewer(self.jira_connection) is not None:
+                    to_add = issue.reviewer(self.jira_connection)
+                    if to_add is not None:
+                        self._known_reviewers.add(to_add)
+                if issue.reviewer2(self.jira_connection) is not None:
+                    to_add = issue.reviewer2(self.jira_connection)
+                    if to_add is not None:
+                        self._known_reviewers.add(to_add)
 
     def add_field_translations_from_file(self) -> None:
         """
@@ -317,7 +322,7 @@ class JiraProject:
         Determines whether JiraConnection for issue matches this project and project_name matches
         """
         assert self.jira_connection is not None
-        return issue.project_name == self.project_name and issue.jira_connection.connection_name == self.jira_connection.connection_name
+        return issue.project_name == self.project_name and issue.jira_connection_name == self.jira_connection.connection_name
 
     def get_issue(self, issue_key: str) -> Optional[JiraIssue]:
         return None if issue_key not in self.jira_issues else self.jira_issues[issue_key]

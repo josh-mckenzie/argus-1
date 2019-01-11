@@ -495,7 +495,7 @@ class TeamManager:
                 break
             try:
                 jira_issue = displayed_issues[int(cmd) - 1]
-                jira_connection = jira_manager.get_jira_connection(jira_issue.jira_connection.connection_name)
+                jira_connection = jira_manager.get_jira_connection(jira_issue.jira_connection_name)
                 JiraUtils.open_issue_in_browser(jira_connection.url, jira_issue.issue_key)
             except ValueError as ve:
                 print('Bad input. Try again.')
