@@ -14,6 +14,7 @@
 
 import datetime
 import itertools
+import os
 
 from dateutil import parser
 
@@ -93,7 +94,7 @@ class ReportFilter:
             result += '{:<{width}.{width}}'.format(column, width=self.col_width)
         return result
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
         raise NotImplementedError()
 
     def matches(self, jira_issue: JiraIssue) -> bool:
@@ -112,11 +113,25 @@ class ReportFilter:
     def issue_count(self, issue_type: str) -> int:
         return len(self.issues[issue_type])
 
-    def print_all_counts(self, name: str) -> str:
-        result = '{:<{width}.{width}} '.format(name, width=self.name_width)
+    def print_all_counts(self, member_issues: MemberIssuesByStatus) -> str:
+        result = '{:<{width}.{width}} '.format(member_issues.primary_name.user_name, width=self.name_width)
         for column in self.columns:
             result += '{:<{width}}'.format(len(self.issues[column]), width=self.col_width)
         return result
+
+    def print_main_data(self, count: int, member_issues: MemberIssuesByStatus, file_handle) -> None:
+        """
+        High level default print at top level on menu. Override to customize headers and which menu this report prints.
+        """
+        self._print_counts(count, member_issues, file_handle)
+
+    def _print_counts(self, count: int, member_issues: MemberIssuesByStatus, file_handle) -> None:
+        file_handle.write('{:5}: {}{}'.format(count, self.print_all_counts(member_issues), os.linesep))
+
+    @staticmethod
+    def _print_details(issues: List[JiraIssue], file_handle) -> None:
+        for jira_issue in issues:
+            file_handle.write('{:5}: {:5} -- {}{}'.format('|---', jira_issue.issue_key, jira_issue.summary, os.linesep))
 
     def get_issues(self, issue_type: str) -> List[JiraIssue]:
         return self.issues[issue_type]
@@ -182,23 +197,24 @@ class InProgressReport(ReportFilter):
         self.columns = ['In Progress']
         self.issues = {'In Progress': []}
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
-        assert member_issues is not None, 'process_issues call on a null MemberIssuesByStatus object.'
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
+        assert member_issues is not None, 'process_raw_issues call on a null MemberIssuesByStatus object.'
+        self._add_matching_issues('In Progress', member_issues.assigned)
 
-        self._add_matching_issues('In Progress', [x for x in member_issues.assigned if x.status == 'In Progress'])
+    def print_main_data(self, count: int, member_issues: MemberIssuesByStatus, file_handle) -> None:
+        file_handle.write('[{}:{:5}] In Progress: {}{}'.format(count, member_issues.primary_name.user_name, len(self.issues['In Progress']), os.linesep))
+        self._print_details(self.issues['In Progress'], file_handle)
+        file_handle.write(os.linesep)
 
     def matches(self, jira_issue: JiraIssue) -> bool:
-        """
-        All filtering done in process_issues
-        """
-        return True
+        return jira_issue.status == 'In Progress'
 
     @property
     def needs_duration(self) -> bool:
         """
         All filtering done in process_issues
         """
-        return True
+        return False
 
 
 class ReportMomentum(ReportFilter):
@@ -213,7 +229,7 @@ class ReportMomentum(ReportFilter):
         self.columns = ['Closed non-test', 'Reviewed', 'Closed Test']
         self.issues = {'Closed non-test': [], 'Reviewed': [], 'Closed Test': []}
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
         assert member_issues is not None, 'process_issues call on a null MemberIssuesByStatus object.'
 
         self._add_matching_issues('Closed non-test', [x for x in member_issues.closed if not x.is_test])
@@ -243,7 +259,7 @@ class ReportCurrentLoad(ReportFilter):
         self.columns = ['bug', 'test', 'feature', 'review', 'PA review', 'Total']
         self.issues = {'bug': [], 'test': [], 'feature': [], 'review': [], 'PA review': [], 'Total': []}
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
         self._add_matching_issues('bug', [x for x in member_issues.assigned if 'Bug' == x.issuetype])
         self._add_matching_issues('test', [x for x in member_issues.assigned if x.is_test])
         self._add_matching_issues('feature', [x for x in member_issues.assigned if x.is_feature])
@@ -306,7 +322,7 @@ class ReportMeta(ReportFilter):
             'CTR': []
         }
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
         # First half -> the open issues
         self._add_matching_issues('CA', [x for x in member_issues.assigned if 'Critical' == x.priority and x.not_test])
         self._add_matching_issues('CR', [x for x in member_issues.reviewer if 'Critical' == x.priority and x.not_test])
@@ -354,7 +370,7 @@ class ReportFixVersion(ReportFilter):
         self.issues = {'Assigned': [], 'Closed non-test': [], 'Reviewed': [], 'Closed Test': [], 'Total': []}
         self._fix_version = None  # type: Optional[str]
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
         assert member_issues is not None, 'process_issues call on a null MemberIssuesByStatus object.'
 
         self._add_matching_issues('Assigned', [x for x in member_issues.assigned])
@@ -397,7 +413,7 @@ class ReportTestLoad(ReportFilter):
         self.columns = ['assigned', 'closed']
         self.issues = {'assigned': [], 'closed': []}
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
         self._add_matching_issues('assigned', member_issues.assigned)
         self._add_matching_issues('closed', member_issues.closed)
 
@@ -424,7 +440,7 @@ class ReportReviewLoad(ReportFilter):
         self.columns = ['reviewer', 'PA reviewer', 'reviewed']
         self.issues = {'reviewer': [], 'PA reviewer': [], 'reviewed': []}
 
-    def process_issues(self, member_issues: MemberIssuesByStatus) -> None:
+    def process_raw_issues(self, member_issues: MemberIssuesByStatus) -> None:
         self._add_matching_issues('reviewer', [x for x in member_issues.reviewer if x.status != 'Patch Available'])
         self._add_matching_issues('PA reviewer', [x for x in member_issues.reviewer if x.status == 'Patch Available'])
         self._add_matching_issues('reviewed', member_issues.reviewed)

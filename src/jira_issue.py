@@ -205,6 +205,10 @@ class JiraIssue(dict):
         return self['resolution']
 
     @property
+    def summary(self) -> Optional[str]:
+        return self['summary']
+
+    @property
     def is_feature(self) -> bool:
         return 'New Feature' == self.issuetype or 'Improvement' == self.issuetype
 
