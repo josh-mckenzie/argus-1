@@ -353,9 +353,10 @@ class Config:
         else:
             config_parser = configparser.RawConfigParser()
             config_parser.read(custom_params_path)
-            Config.JENKINS_URL = config_parser.get('JENKINS', 'url').rstrip('/')
-            Config.JENKINS_BRANCHES = config_parser.get('JENKINS', 'branches').split(',')
-            Config.JENKINS_PROJECT = list(config_parser.get('JENKINS', 'project_name'))
+            if config_parser.has_section('JENKINS'):
+                Config.JENKINS_URL = config_parser.get('JENKINS', 'url').rstrip('/')
+                Config.JENKINS_BRANCHES = config_parser.get('JENKINS', 'branches').split(',')
+                Config.JENKINS_PROJECT = list(config_parser.get('JENKINS', 'project_name'))
 
 
 def get_build_options() -> Tuple[int, int]:

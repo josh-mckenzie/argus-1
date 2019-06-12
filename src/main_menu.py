@@ -19,6 +19,7 @@ from getpass import getpass
 from typing import Dict, List
 
 from src import __version__, utils
+from src.csv_cleaner import CSVCleaner
 from src.jira_manager import JiraManager
 from src.jenkins_manager import JenkinsManager
 from src.menu_option import MenuOption
@@ -38,6 +39,15 @@ class MainMenu:
         # TODO: Clean up the coupling with main_menu.
         self.jenkins_manager = JenkinsManager(self)
 
+        if 'to_clean' in options:
+            jira_connections = {}
+            for jira_connection in self.jira_manager.jira_connections():
+                argus_debug('Init connection: {}'.format(jira_connection.connection_name))
+                jira_connections[jira_connection.connection_name] = jira_connection
+            cleaner = CSVCleaner(jira_connections, self.jira_manager.get_all_cached_jira_projects())
+            cleaner.process(options['to_clean'])
+            exit(0)
+
         if 'triage_csv' in options:
             jira_connections = {}
             for jira_connection in self.jira_manager.jira_connections():
@@ -46,6 +56,7 @@ class MainMenu:
             triage_update = TriageUpdate(jira_connections, self.jira_manager.get_all_cached_jira_projects())
             triage_out = options['triage_out'] if 'triage_out' in options else None
             triage_update.process(options['triage_csv'], triage_out)
+            exit(0)
 
         if 'dashboard' in options:
             user_key = options['dashboard']

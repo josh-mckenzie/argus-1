@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import jira
-from typing import Dict
-
-from src import utils;
-from src.jira_view import JiraView
-
-utils.unit_test = True
+from src import utils
 from src.jira_connection import JiraConnection
 from src.jira_filter import JiraFilter
 from src.jira_issue import JiraIssue
 from src.jira_project import JiraProject
+from src.jira_view import JiraView
 from tests.argus_test import Tester
+
+utils.unit_test = True
 
 
 class TestJiraFilter(Tester):

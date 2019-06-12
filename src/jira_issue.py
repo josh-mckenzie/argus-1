@@ -238,6 +238,13 @@ class JiraIssue(dict):
     def reviewer2(self, jira_connection: 'JiraConnection') -> Optional[str]:
         return self.get_value(jira_connection, 'reviewer2')
 
+    def reviewers(self, jira_connection: 'JiraConnection') -> Optional[List[str]]:
+        """
+        :param jira_connection: Need JiraConnection to translate from human readable to custom field
+        """
+        reviewers = self.get_value(jira_connection, 'reviewers')
+        return None if reviewers is None else reviewers.split(',')
+
     def has_fix_version(self, version: str) -> bool:
         return version in self['fixVersions']
 
@@ -281,8 +288,11 @@ class JiraIssue(dict):
             return None
 
         field_name = jira_project.translate_custom_field(field)
+        print('Translated custom_field: {} to value: {}'.format(field, field_name))
         if field_name not in self:
+            print('NONE in self. Cannot find: {}'.format(field_name))
             return None
+        print('Returning: [{}]'.format(self[field_name]))
         return self[field_name]
 
     @property
